@@ -122,3 +122,48 @@ func TestNewMapFrom(t *testing.T) {
 		})
 	}
 }
+
+
+func TestGet(t *testing.T) {
+	tests := []struct {
+		name string
+		args map[int]int
+		key int
+		want int
+		wantOk bool
+	}{
+		{
+			name: "empty",
+			args: map[int]int{},
+			key: 1,
+			want: 0,
+			wantOk: false,
+		},
+		{
+			name: "simple",
+			args: func() map[int]int {
+				m := map[int]int{}
+				m[0] = 1
+				return m
+			}(),
+			key: 0,
+			want: 1,
+			wantOk: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(*testing.T) {
+			m := NewMapFrom(tt.args)
+			v, ok := m.Get(tt.key)
+
+			if ok != tt.wantOk {
+				t.Errorf("%v != %v\n", ok, tt.wantOk)
+			} else {
+				if ok && v != tt.want {
+					t.Errorf("%v != %v\n", v, tt.want)
+				}
+			}
+		})
+	}
+}
