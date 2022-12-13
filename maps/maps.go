@@ -15,7 +15,7 @@ type (
 		Copy(IMap[K, V]) IMap[K, V]
 		Delete(K)
 		DeleteFunc(func (K, V) bool)
-		EqualFunc(IMap[K, V], func(V, V) bool)
+		EqualFunc(IMap[K, V], func(V, V) bool) bool
 		TryComparable() (IComparableMap[K, V], bool)
 	}
 	IComparableMap[K comparable, V any] interface {
@@ -146,8 +146,8 @@ func (m *Map[K, V]) DeleteFunc(del func(K, V) bool) {
 	}
 }
 
-func (m *Map[K, V]) EqualFunc(o IMap[K, V], eq func(V, V) bool) {
-	return EqualFunc(m, o, eq)
+func (m *Map[K, V]) EqualFunc(o IMap[K, V], eq func(V, V) bool) bool {
+	return EqualFunc[K, V, V](m, o, eq)
 }
 
 func (m *Map[K, V]) TryComparable() (IComparableMap[K, V], bool) {
