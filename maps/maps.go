@@ -75,6 +75,49 @@ func NewMap[K comparable, V any]() IMap[K, V] {
 	}
 }
 
+func NewMapFrom[K comparable, V any](m map[K]V) IMap[K, V] {
+	switch t := any(m).(type) {
+	case map[K]bool:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]string:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]int:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]int8:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]int16:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]int32:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]int64:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uint:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uint8:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uint16:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uint32:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uint64:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]uintptr:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]float32:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]float64:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]complex64:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	case map[K]complex128:
+		return NewComparableMapFrom(t).(IMap[K, V])
+	default:
+		return &Map[K, V]{
+			item: m,
+		}
+	}
+}
+
 func NewComparableMap[K, V comparable]() IComparableMap[K, V] {
 	return &ComparableMap[K, V]{
 		Map[K,V]{
@@ -83,6 +126,13 @@ func NewComparableMap[K, V comparable]() IComparableMap[K, V] {
 	}
 }
 
+func NewComparableMapFrom[K, V comparable](m map[K]V) IComparableMap[K, V] {
+	return &ComparableMap[K, V]{
+		Map[K, V]{
+			item: m,
+		},
+	}
+}
 
 func (m *Map[K, V]) Get(k K) (V, bool) {
 	v, ok := m.item[k]
