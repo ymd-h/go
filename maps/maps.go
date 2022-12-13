@@ -4,33 +4,137 @@
 package maps
 
 type (
+	// Interface for Generic Map
 	IMap[K comparable, V any] interface {
-		Get(K) (V, bool)
-		Set(K, V)
+		// Get value at key if it exists
+		//
+		// # Arguments
+		// * `key`: `K` - Key
+		//
+		// # Returns
+		// * `V` - Value
+		// * `bool` - Success
+		Get(key K) (V, bool)
+
+		// Set value at key
+		//
+		// # Arguments
+		// * `key`: `K` - Key
+		// * `value`: `V` - Value
+		Set(key K, value V)
+
+		// Get keys of map
+		//
+		// # Returns
+		// * `[]K` - Slice of keys
 		Keys() []K
+
+		// Get Values of map
+		//
+		// # Returns
+		// * `[]V` - Slice of values
 		Values() []V
+
+		// Get size of map
+		//
+		// # Returns
+		// * `int` - Size
 		Size() int
+
+		// Clear map
 		Clear()
+
+		// Clone map
+		//
+		// # Returns
+		// * `IMap[K, V]` - Cloned map
+		//
+		// # Warning
+		// This is shallow copy
 		Clone() IMap[K, V]
-		Copy(IMap[K, V]) IMap[K, V]
-		Delete(K)
-		DeleteFunc(func (K, V) bool)
-		EqualFunc(IMap[K, V], func(V, V) bool) bool
+
+		// Copy to another map
+		//
+		// # Arguments
+		// `other`: `IMap[K, V]` - Copy destination
+		//
+		// # Returns
+		// * `IMap[K, V]` - `other`
+		Copy(other IMap[K, V]) IMap[K, V]
+
+		// Delete value at a key
+		//
+		// # Arguments
+		// * `key`: `K` - Key to be deleted
+		Delete(key K)
+
+		// Delete values which meets condition
+		//
+		// # Arguments
+		// * `del`: `func(K, V) bool` - Delete condition
+		DeleteFunc(del func (K, V) bool)
+
+		// Equal check with function
+		//
+		// # Arguments
+		// * `other`: `IMap[K, V]` - Comparison target
+		//
+		// # Returns
+		// * `eq`: `func(V, V) bool` - Equality function
+		//
+		// # Notes
+		// Since method cannot be generics, `other` is limitied to
+		// the same type paramter `[K, V]`.
+		// Free function version can accept different value type, too.
+		EqualFunc(other IMap[K, V], eq func(V, V) bool) bool
+
+		// Type assertion to IComparable interface
+		//
+		// # Returns
+		// * `IComparable[K, V]` - Comparable Map if possible
+		// * `bool` - Success
 		TryComparable() (IComparableMap[K, V], bool)
 	}
+
+	// Interface for Comparable Map
+	//
+	// # Notes
+	// Interface is defined over `[K comparable, V any]`
+	// to support `IMap[K, V].TryComparable()`,
+	// however, implementation supports only `[K, V comparable]`
 	IComparableMap[K comparable, V any] interface {
 		IMap[K, V]
-		Equal(IComparableMap[K, V]) bool
+
+		// Equality check
+		//
+		// # Arguments
+		// * `other`: `IComparableMap[K, V]` - Map to be checked
+		//
+		// # Returns
+		// * `bool` - Whether they are equal or not
+		Equal(other IComparableMap[K, V]) bool
 	}
 
+	// Class implements `IMap[K, V]`
 	Map[K comparable, V any] struct {
 		item map[K]V
 	}
+
+	// Class implements `IComparableMap[K, V]`
 	ComparableMap[K, V comparable] struct {
 		Map[K, V]
 	}
 )
 
+// Create new map
+//
+// # Returns
+// * `IMap[K, V]` - Created map
+//
+// # Notes
+// For some predefined primitive types, we detect and create `ComparableMap[K, V]`.
+// This mechanism cannot detect composite types like pointer, channel, and so on.
+// If you know the type is comparable, please use `NewComparableMap()` instead.
 func NewMap[K comparable, V any]() IMap[K, V] {
 	var v V
 	switch any(v).(type) {
@@ -75,6 +179,18 @@ func NewMap[K comparable, V any]() IMap[K, V] {
 	}
 }
 
+// Create new map from existing map
+//
+// # Arguments
+// * `m`: `map[K]V` - Existing map
+//
+// # Returns
+// * `IMap[K, V]` - Created map
+//
+// # Notes
+// For some predefined primitive types, we detect and create `ComparableMap[K, V]`.
+// This mechanism cannot detect composite types like pointer, channel, and so on.
+// If you know the type is comparable, please use `NewComparableMap()` instead.
 func NewMapFrom[K comparable, V any](m map[K]V) IMap[K, V] {
 	switch t := any(m).(type) {
 	case map[K]bool:
@@ -118,6 +234,10 @@ func NewMapFrom[K comparable, V any](m map[K]V) IMap[K, V] {
 	}
 }
 
+// Create new comparable map
+//
+// # Returns
+// * `IComparable[K, V]` - Created comparable map
 func NewComparableMap[K, V comparable]() IComparableMap[K, V] {
 	return &ComparableMap[K, V]{
 		Map[K,V]{
@@ -126,6 +246,13 @@ func NewComparableMap[K, V comparable]() IComparableMap[K, V] {
 	}
 }
 
+// Create new comparable map from existing map
+//
+// # Arguments
+// * `m`: `map[K]V` - Existing comparable map
+//
+// # Returns
+// * `IComparable[K, V]` - Created comparable map
 func NewComparableMapFrom[K, V comparable](m map[K]V) IComparableMap[K, V] {
 	return &ComparableMap[K, V]{
 		Map[K, V]{
@@ -234,11 +361,26 @@ func (m *ComparableMap[K, V]) Equal(o IComparableMap[K, V]) bool {
 	return true
 }
 
+// Free function of equality check
+//
+// # Arguments
+// * `m1`, `m2`: `IComparableMap[K, V]` - Maps to be compared
+//
+// # Returns
+// * `bool` - Whether they are equal
 func Equal[K, V comparable](m1, m2 IComparableMap[K, V]) bool {
 	return m1.Equal(m2)
 }
 
-
+// Free function of equality check
+//
+// # Arguments
+// * `m1`: `IComparableMap[K, V1]` - Maps to be compared
+// * `m2`: `IComparableMap[K, V2]` - Maps to be compared
+// * `eq`: `func (V1, V2) bool`
+//
+// # Returns
+// * `bool` - Whether they are equal
 func EqualFunc[K comparable, V1, V2 any](m1 IMap[K, V1], m2 IMap[K, V2], eq func (V1, V2) bool) bool {
 	if m1.Size() != m2.Size() {
 		return false
