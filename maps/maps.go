@@ -194,9 +194,15 @@ func EqualFunc[K comparable, V1, V2 any](m1 IMap[K, V1], m2 IMap[K, V2], eq func
 		return false
 	}
 
+	var key K
 	for k := range m1.Keys() {
-		v1, _ := m1.Get(k)
-		if v2, ok := m2.Get(k); (!ok) || (!eq(v1, v2)) {
+		// # Issue
+		// Go 1.19 compiler cannot estimate type correctly, and fail to build;
+		// `cannot use k (variable of type int) as type K in argument to m1.Get` etc.
+		// As a workaround, we dynamically assert type
+		key = any(k).(K)
+		v1, _ := m1.Get(key)
+		if v2, ok := m2.Get(key); (!ok) || (!eq(v1, v2)) {
 			return false
 		}
 	}
