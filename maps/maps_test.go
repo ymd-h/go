@@ -217,3 +217,30 @@ func TestSet(t *testing.T) {
 			y.AssertEqual(t, after, data.wantAfter)
 	})
 }
+
+func TestKeys(t *testing.T) {
+	type test struct {
+		m IMap[int, int]
+		want []int
+	}
+
+	y.NewTest[test](t).
+		Add("simple", test{
+			m: func() IMap[int, int] {
+				m := NewMap[int, int]()
+				m.Set(1, 5)
+				m.Set(10, -2)
+				m.Set(-2, 10)
+				return m
+			}(),
+			want: []int{1, 10, -2},
+		}).
+		Run(func(t *testing.T, data test) {
+			got := data.m.Keys()
+
+			y.AssertEqual(t, len(got), len(data.want))
+			for _, e := range got {
+				y.AssertIsIn(t, e, data.want)
+			}
+		})
+}
