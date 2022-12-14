@@ -44,3 +44,12 @@ func AssertEqual[T comparable](t *testing.T, got T, want T) {
 		t.Errorf("%v != %v\n", got, want)
 	}
 }
+
+func AssertIsIn[T comparable](t *testing.T, e T, slice []T) {
+	for _, s := range slice {
+		if e == s {
+			return
+		}
+	}
+	t.Errorf("%v is not included in %v\n", e, slice)
+}
