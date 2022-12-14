@@ -3,6 +3,8 @@ package maps
 import (
 	"reflect"
 	"testing"
+
+	y "github.com/ymd-h/go/testing"
 )
 
 func TestNewMap(t *testing.T) {
@@ -166,4 +168,40 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
+}
+
+
+func TestSet(t *testing.T) {
+	type test struct {
+		init IMap[string, int]
+		key string
+		value int
+		wantBefore int
+		wantBeforeOk bool
+		wantAfter int
+	}
+
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewMap[string, int](),
+			key: "a",
+			value: 1,
+			wantBefore: 0,
+			wantBeforeOk: false,
+			wantAfter: 1,
+		}).
+		Run(func(tt *testing.T, data test) {
+			m := data.init
+			before, beforeOk := m.Get(data.key)
+			y.AssertEqual(t, beforeOk, data.wantBeforeOk)
+
+			if beforeOk {
+				y.AssertEqual(t, before, data.wantBefore)
+			}
+
+			m.Set(data.key, data.value)
+			after, afterOk := m.Get(data.key)
+			y.AssertEqual(t, afterOk, true)
+			y.AssertEqual(t, after, data.wantAfter)
+	})
 }
