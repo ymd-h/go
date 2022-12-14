@@ -190,6 +190,18 @@ func TestSet(t *testing.T) {
 			wantBeforeOk: false,
 			wantAfter: 1,
 		}).
+		Add("overwrite", test{
+			init: func() IMap[string, int] {
+				m := NewMap[string, int]()
+				m.Set("b", 2)
+				return m
+			}(),
+			key: "b",
+			value: 10,
+			wantBefore: 2,
+			wantBeforeOk: true,
+			wantAfter: 10,
+		}).
 		Run(func(tt *testing.T, data test) {
 			m := data.init
 			before, beforeOk := m.Get(data.key)
