@@ -4,5 +4,6 @@ use (
 	./maps
 	./queuechan
 	./slices
+	./testing
 	./wokerpool
 )
