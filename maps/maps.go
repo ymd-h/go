@@ -271,7 +271,7 @@ func (m *Map[K, V]) Set(k K, v V) {
 }
 
 func (m *Map[K, V]) Keys() []K {
-	keys := make([]K, len(m.item))
+	keys := make([]K, 0, len(m.item))
 	for k, _ := range m.item {
 		keys = append(keys, k)
 	}
@@ -279,7 +279,7 @@ func (m *Map[K, V]) Keys() []K {
 }
 
 func (m *Map[K, V]) Values() []V {
-	values := make([]V, len(m.item))
+	values := make([]V, 0, len(m.item))
 	for _, v := range m.item {
 		values = append(values, v)
 	}
