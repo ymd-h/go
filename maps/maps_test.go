@@ -244,3 +244,33 @@ func TestKeys(t *testing.T) {
 			}
 		})
 }
+
+
+func TestValues(t *testing.T) {
+	type test struct {
+		m IMap[string, float32]
+		want []float32
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			m: func() IMap[string, float32] {
+				m := NewMap[string, float32]()
+				m.Set("a", 0.5)
+				m.Set("c", -0.7)
+				m.Set("d", 1.5)
+				return m
+			}(),
+			want:[]float32{0.5, -0.7, 1.5},
+		}).
+		Add("empty", test{
+			m: NewMap[string, float32](),
+			want: []float32{},
+		}).
+		Run(func(tt *testing.T, data test) {
+			got := data.m.Values()
+			y.AssertEqual(t, len(got), len(data.want))
+			for _, e := range got {
+				y.AssertIsIn(t, e, data.want)
+			}
+		})
+}
