@@ -274,3 +274,27 @@ func TestValues(t *testing.T) {
 			}
 		})
 }
+
+
+func TestSize(t *testing.T) {
+	type test struct {
+		m IMap[float32, string]
+		want int
+	}
+	y.NewTest[test](t).
+		Add("empty", test{
+			m: NewMap[float32, string](),
+			want: 0,
+		}).
+		Add("simple", test{
+			m: func() IMap[float32, string] {
+				m := NewMap[float32, string]()
+				m.Set(0.8, "a")
+				return m
+			}(),
+			want: 1,
+		}).
+		Run(func(tt *testing.T, data test) {
+			y.AssertEqual(t, data.m.Size(), data.want)
+		})
+}
