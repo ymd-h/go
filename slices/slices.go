@@ -102,7 +102,6 @@ func NewSlice[E any]() ISlice[E] {
 			item: make([]E, 0),
 		}
 	}
-
 }
 func NewComparableSlice[E comparable]() IComparableSlice[E] {
 	var e E
@@ -140,7 +139,6 @@ func NewComparableSlice[E comparable]() IComparableSlice[E] {
 			},
 		}
 	}
-
 }
 func NewOrderedSlice[E ordered]() IOrderedSlice[E] {
 	return &OrderedSlice[E]{
