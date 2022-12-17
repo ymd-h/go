@@ -12,8 +12,22 @@ type (
 	ordered = constraints.Ordered
 
 	ISlice[E any] interface {
-		Get(int) E
-		Append(E)
+		// Get value at specified index
+		//
+		// # Arguments
+		// * `i`: `int` - Index
+		//
+		// # Returns
+		// * `E` - Internal value
+		Get(i int) E
+
+		Set(i int, e E)
+
+		// Append element(s)
+		//
+		// # Arguments
+		// `elems`: `...E` - Elements to be added
+		Append(elems ...E)
 		Size() int
 		BynarySearchFunc(E, func(E, E) int) (int, bool)
 		Clip()
