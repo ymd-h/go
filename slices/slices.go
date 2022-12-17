@@ -15,11 +15,11 @@ type (
 		Get(int) E
 		Append(E)
 		Size() int
-		BynarySearchFunc(E, func(E) int) (int, bool)
+		BynarySearchFunc(E, func(E, E) int) (int, bool)
 		Clip()
 		Clone() ISlice[E]
-		CompactFunc(func (E) bool)
-		CompareFunc(ISlice[E], func (E, E) bool)
+		CompactFunc(func (E, E) bool)
+		CompareFunc(ISlice[E], func (E, E) int) int
 		ContainsFunc(func (E) bool) bool
 		Delete(int, int)
 		EqualFunc(ISlice[E], func (E, E) bool) bool
@@ -108,31 +108,31 @@ func NewComparableSlice[E comparable]() IComparableSlice[E] {
 	var e E
 	switch any(e).(type) {
 	case string:
-		return NewComparableSlice[string]().(IComparableSlice[E])
+		return NewOrderedSlice[string]().(IComparableSlice[E])
 	case int:
-		return NewComparableSlice[int]().(IComparableSlice[E])
+		return NewOrderedSlice[int]().(IComparableSlice[E])
 	case int8:
-		return NewComparableSlice[int8]().(IComparableSlice[E])
+		return NewOrderedSlice[int8]().(IComparableSlice[E])
 	case int16:
-		return NewComparableSlice[int16]().(IComparableSlice[E])
+		return NewOrderedSlice[int16]().(IComparableSlice[E])
 	case int32:
-		return NewComparableSlice[int32]().(IComparableSlice[E])
+		return NewOrderedSlice[int32]().(IComparableSlice[E])
 	case int64:
-		return NewComparableSlice[int64]().(IComparableSlice[E])
+		return NewOrderedSlice[int64]().(IComparableSlice[E])
 	case uint:
-		return NewComparableSlice[uint]().(IComparableSlice[E])
+		return NewOrderedSlice[uint]().(IComparableSlice[E])
 	case uint8:
-		return NewComparableSlice[uint8]().(IComparableSlice[E])
+		return NewOrderedSlice[uint8]().(IComparableSlice[E])
 	case uint16:
-		return NewComparableSlice[uint16]().(IComparableSlice[E])
+		return NewOrderedSlice[uint16]().(IComparableSlice[E])
 	case uint32:
-		return NewComparableSlice[uint32]().(IComparableSlice[E])
+		return NewOrderedSlice[uint32]().(IComparableSlice[E])
 	case uint64:
-		return NewComparableSlice[uint64]().(IComparableSlice[E])
+		return NewOrderedSlice[uint64]().(IComparableSlice[E])
 	case float32:
-		return NewComparableSlice[float32]().(IComparableSlice[E])
+		return NewOrderedSlice[float32]().(IComparableSlice[E])
 	case float64:
-		return NewComparableSlice[float64]().(IComparableSlice[E])
+		return NewOrderedSlice[float64]().(IComparableSlice[E])
 	default:
 		return &ComparableSlice[E]{
 			Slice[E]{
@@ -143,7 +143,7 @@ func NewComparableSlice[E comparable]() IComparableSlice[E] {
 
 }
 func NewOrderedSlice[E ordered]() IOrderedSlice[E] {
-	&OrderedSlice[E]{
+	return &OrderedSlice[E]{
 		ComparableSlice[E]{
 			Slice[E]{
 				item: make([]E, 0),
@@ -165,7 +165,7 @@ func (s *Slice[E]) Size() int {
 	return len(s.item)
 }
 
-func search(n int, gt func(int) bool) {
+func search(n int, gt func(int) bool) int {
 	start, end := 0, n
 	for start < end {
 		check := start + (end - start) / 2
@@ -188,7 +188,7 @@ func (s *Slice[E]) BynarySearchFunc(target E, cmp func(E, E) int) (int, bool) {
 }
 
 func (s *Slice[E]) Clip() {
-	n = len(s.item)
+	n := len(s.item)
 	s.item = s.item[:n:n]
 }
 
@@ -218,7 +218,7 @@ func (s *Slice[E]) CompactFunc(eq func(E, E) bool) {
 }
 
 func (s *Slice[E]) CompareFunc(o ISlice[E], cmp func(E, E) int) int {
-	return CompareFunc(s, o, cmp)
+	return CompareFunc[E, E](s, o, cmp)
 }
 
 func (s *Slice[E]) ContainsFunc(cond func(E) bool) bool {
@@ -290,7 +290,7 @@ func (s *Slice[E]) Insert(i int, elems ...E) {
 
 	item := make([]E, need)
 	copy(item, s.item[:i])
-	copy(item[i:], v)
+	copy(item[i:], elems)
 	copy(item[i+n:], s.item[i:])
 	s.item = item
 }
@@ -321,7 +321,8 @@ func (s *Slice[E]) Replace(start, end int, elems ...E) {
 		end = slen
 	}
 
-	switch n := end - start {
+	n := end - start
+	switch {
 	case n > len(elems):
 		end = start + len(elems)
 	case n < len(elems):
@@ -411,7 +412,7 @@ func (s *ComparableSlice[E]) Index(e E) int {
 
 
 func (s *ComparableSlice[E]) TryComparable() (IComparableSlice[E], bool) {
-	return s.(IComparableSlice[E]), true
+	return any(s).(IComparableSlice[E]), true
 }
 
 func (s *ComparableSlice[E]) TryOrdered() (IOrderedSlice[E], bool) {
@@ -441,8 +442,8 @@ func (s *OrderedSlice[E]) Clone() ISlice[E] {
 }
 
 
-func (s *OrderedSlice[E]) Compare(o OrderedSlice[E]) int {
-	olen = o.Size()
+func (s *OrderedSlice[E]) Compare(o IOrderedSlice[E]) int {
+	olen := o.Size()
 	for i, v1 := range s.item {
 		if i >= olen {
 			return +1
@@ -485,11 +486,11 @@ func (s *OrderedSlice[E]) Sort() {
 
 
 func (s *OrderedSlice[E]) TryComparable() (IComparableSlice[E], bool) {
-	return s.(IComparableSlice[E]), true
+	return any(s).(IComparableSlice[E]), true
 }
 
 func (s *OrderedSlice[E]) TryOrdered() (IOrderedSlice[E], bool) {
-	return s.(IOrderedSlice[E]), true
+	return any(s).(IOrderedSlice[E]), true
 }
 
 
