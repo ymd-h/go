@@ -165,12 +165,104 @@ func NewOrderedSlice[E ordered]() IOrderedSlice[E] {
 }
 
 
+func NewSliceFrom[E any, S []E](s S) ISlice[E] {
+	switch t := any(s).(type) {
+	case []bool:
+		return NewComparableSliceFrom[bool](t).(ISlice[E])
+	case []string:
+		return NewComparableSliceFrom[string](t).(ISlice[E])
+	case []int:
+		return NewComparableSliceFrom[int](t).(ISlice[E])
+	case []int8:
+		return NewComparableSliceFrom[int8](t).(ISlice[E])
+	case []int16:
+		return NewComparableSliceFrom[int16](t).(ISlice[E])
+	case []int32:
+		return NewComparableSliceFrom[int32](t).(ISlice[E])
+	case []int64:
+		return NewComparableSliceFrom[int64](t).(ISlice[E])
+	case []uint:
+		return NewComparableSliceFrom[uint](t).(ISlice[E])
+	case []uint8:
+		return NewComparableSliceFrom[uint8](t).(ISlice[E])
+	case []uint16:
+		return NewComparableSliceFrom[uint16](t).(ISlice[E])
+	case []uint32:
+		return NewComparableSliceFrom[uint32](t).(ISlice[E])
+	case []uint64:
+		return NewComparableSliceFrom[uint64](t).(ISlice[E])
+	case []uintptr:
+		return NewComparableSliceFrom[uintptr](t).(ISlice[E])
+	case []float32:
+		return NewComparableSliceFrom[float32](t).(ISlice[E])
+	case []float64:
+		return NewComparableSliceFrom[float64](t).(ISlice[E])
+	case []complex64:
+		return NewComparableSliceFrom[complex64](t).(ISlice[E])
+	case []complex128:
+		return NewComparableSliceFrom[complex128](t).(ISlice[E])
+	default:
+		return &Slice[E]{
+			item: s,
+		}
+	}
+}
+func NewComparableSliceFrom[E comparable, S []E](s S) IComparableSlice[E] {
+	switch t := any(s).(type) {
+	case []string:
+		return NewOrderedSliceFrom[string](t).(IComparableSlice[E])
+	case []int:
+		return NewOrderedSliceFrom[int](t).(IComparableSlice[E])
+	case []int8:
+		return NewOrderedSliceFrom[int8](t).(IComparableSlice[E])
+	case []int16:
+		return NewOrderedSliceFrom[int16](t).(IComparableSlice[E])
+	case []int32:
+		return NewOrderedSliceFrom[int32](t).(IComparableSlice[E])
+	case []int64:
+		return NewOrderedSliceFrom[int64](t).(IComparableSlice[E])
+	case []uint:
+		return NewOrderedSliceFrom[uint](t).(IComparableSlice[E])
+	case []uint8:
+		return NewOrderedSliceFrom[uint8](t).(IComparableSlice[E])
+	case []uint16:
+		return NewOrderedSliceFrom[uint16](t).(IComparableSlice[E])
+	case []uint32:
+		return NewOrderedSliceFrom[uint32](t).(IComparableSlice[E])
+	case []uint64:
+		return NewOrderedSliceFrom[uint64](t).(IComparableSlice[E])
+	case []float32:
+		return NewOrderedSliceFrom[float32](t).(IComparableSlice[E])
+	case []float64:
+		return NewOrderedSliceFrom[float64](t).(IComparableSlice[E])
+	default:
+		return &ComparableSlice[E]{
+			Slice[E]{
+				item: s,
+			},
+		}
+	}
+}
+func NewOrderedSliceFrom[E ordered, S []E](s S) IOrderedSlice[E] {
+	return &OrderedSlice[E]{
+		ComparableSlice[E]{
+			Slice[E]{
+				item: s,
+			},
+		},
+	}
+}
+
 func (s *Slice[E]) Get(i int) E {
 	return s.item[i]
 }
 
-func (s *Slice[E]) Append(e E) {
-	s.item = append(s.item, e)
+func (s *Slice[E]) Set(i int, e E) {
+	s.item[i] = e
+}
+
+func (s *Slice[E]) Append(elems ...E) {
+	s.item = append(s.item, elems...)
 }
 
 func (s *Slice[E]) Size() int {
