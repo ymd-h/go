@@ -71,3 +71,54 @@ func TestNewSlice(t *testing.T) {
 			y.AssertEqual(t, got, wantName)
 		})
 }
+
+
+func TestGet(t *testing.T) {
+	type test struct{
+		init ISlice[string]
+		arg int
+		want string
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: func() ISlice[string] {
+				s := NewSlice[string]()
+				s.Append("a", "b")
+				return s
+			}(),
+			arg: 1,
+			want: "b",
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.init.Get(data.arg), data.want)
+		})
+}
+
+
+func TestAppend(t *testing.T) {
+	type test struct{
+		init ISlice[int]
+		arg []int
+		want []int
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewSlice[int](),
+			arg: []int{1, 2, 3},
+			want: []int{1, 2, 3},
+		}).
+		Add("append", test{
+			init: &ComparableSlice[int]{
+				Slice[int]{ item: []int{1, 2, 3} },
+			},
+			arg: []int{4, 5, 6},
+			want: []int{1, 2, 3, 4, 5, 6},
+		}).
+		Run(func(_ *testing.T, data test) {
+			m := data.init
+			m.Append(data.arg...)
+			for i, e := range data.want {
+				y.AssertEqual(t, m.Get(i), e)
+			}
+		})
+}
