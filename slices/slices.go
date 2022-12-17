@@ -21,6 +21,11 @@ type (
 		// * `E` - Internal value
 		Get(i int) E
 
+		// Set value at specified index
+		//
+		// # Arguments
+		// * `i`: `int` - Index
+		// * `e`: `E` - Value to be set
 		Set(i int, e E)
 
 		// Append element(s)
