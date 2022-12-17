@@ -15,15 +15,37 @@ func TestNewSlice(t *testing.T) {
 	y.NewTest[test](t).
 		Add("int", test{
 			arg: 1,
-			want: NewComparableSlice[int](),
+			want: &OrderedSlice[int]{
+				ComparableSlice[int]{
+					Slice[int]{
+						item: []int{},
+					},
+				},
+			},
 		}).
 		Add("string", test{
 			arg: "a",
-			want: NewComparableSlice[string](),
+			want: &OrderedSlice[string]{
+				ComparableSlice[string]{
+					Slice[string]{
+						item: []string{},
+					},
+				},
+			},
 		}).
 		Add("uint", test{
 			arg: uint(1),
-			want: NewComparableSlice[uint](),
+			want: &OrderedSlice[uint]{
+				ComparableSlice[uint]{
+					Slice[uint]{
+						item: []uint{},
+					},
+				},
+			},
+		}).
+		Add("bool", test{
+			arg: true,
+			want: &ComparableSlice[bool]{ Slice[bool]{ item: []bool{} } },
 		}).
 		Add("*int (unsupported)", test{
 			arg: func() *int {
