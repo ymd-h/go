@@ -95,6 +95,32 @@ func TestGet(t *testing.T) {
 }
 
 
+func TestSet(t *testing.T) {
+	type test struct{
+		init ISlice[int]
+		idx int
+		v int
+		before int
+		after int
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewSliceFrom[int]([]int{1, 2}),
+			idx: 0,
+			v: 3,
+			before: 1,
+			after: 3,
+		}).
+		Run(func(_ *testing.T, data test) {
+			m := data.init
+			idx := data.idx
+			y.AssertEqual(t, m.Get(idx), data.before)
+			m.Set(idx, data.v)
+			y.AssertEqual(t, m.Get(idx), data.after)
+		})
+}
+
+
 func TestAppend(t *testing.T) {
 	type test struct{
 		init ISlice[int]
