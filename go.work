@@ -6,4 +6,5 @@ use (
 	./slices
 	./testing
 	./wokerpool
+	./worktidy
 )
