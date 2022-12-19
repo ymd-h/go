@@ -4,12 +4,17 @@ package main
 import (
 	"errors"
 	"fmt"
+	"go/token"
+	"go/parser"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sync"
+	"strings"
 
+	"golang.org/x/mod/module"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/vcs"
 )
@@ -50,6 +55,20 @@ func getVCS() (*vcs.Cmd, error) {
 	return nil, errors.New("Unknown VCS")
 }
 
+func getTags() []string {
+	vcsCmd, err := getVCS()
+	if err != nil {
+		return []string{}
+	}
+
+	tags, err := vcsCmd.Tags(".")
+	if err != nil {
+		return []string{}
+	}
+
+	return tags
+}
+
 
 func main() {
 	goWork, err := readParseWork()
@@ -74,31 +93,76 @@ func main() {
 	}
 	wg.Wait()
 
-	// Check workspace requires for indirect requires.
+	// Check workspace requires and latest versions.
 	requires := make(map[string][]*modfile.Require)
+	versions := make(map[string]module.Version)
+	tags := getTags()
+	vRegexp := `v\d+(\.\d+){0,2}`
 	for _, use := range goWork.Use {
-		goMod, err := readParseSubMod(use.Path)
+		usePath := use.Path
+		goMod, err := readParseSubMod(usePath)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		requires[goMod.Module.Mod.Path] = goMod.Require
+
+		modPath := goMod.Module.Mod.Path
+		requires[modPath] = goMod.Require
+
+		var prefix string
+		switch {
+		case usePath == ".":
+			prefix = ""
+		case len(usePath) > 2 && usePath[:2] == "./":
+			prefix = usePath[2:] + "/"
+		default:
+			prefix = usePath + "/"
+		}
+
+		vTag := regexp.MustCompile(fmt.Sprintf(`^%s%s$`, prefix, vRegexp))
+		vTags := []module.Version{}
+		for _, tag := range tags {
+			if !vTag.Match([]byte(tag)) {
+				continue
+			}
+			vTags = append(vTags,
+				module.Version{
+					Path: modPath,
+					Version: tag[len(prefix):],
+				})
+		}
+		if len(vTags) > 0 {
+			module.Sort(vTags)
+			versions[modPath] = vTags[len(vTags)-1]
+		} else {
+			versions[modPath] = module.Version{
+				Path: modPath,
+				Version: "",
+			}
+		}
 	}
 
-	vcsCmd, err := getVCS()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
 
-	tags, err := vcsCmd.Tags(".")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	vTag := regexp.MustCompile(`^([^/]+/)?v\d+(\.\d+){0,2}$`)
-	for _, tag := range tags {
-		fmt.Printf("%s => %v\n", tag, vTag.Match([]byte(tag)))
+	for _, use := range goWork.Use {
+		fmt.Printf("Check Import at %s\n", use.Path)
+		fset := token.NewFileSet()
+		astMap, err := parser.ParseDir(
+			fset,
+			filepath.Clean(use.Path),
+			func(f fs.FileInfo) bool {
+				return !strings.HasSuffix(f.Name(), "_test.go")
+			},
+			parser.ImportsOnly,
+		)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		for _, pkg := range astMap {
+			fmt.Printf("pkg.Name: %s\n", pkg.Name)
+			for pkgID, pkgObj := range pkg.Imports {
+				fmt.Printf("pkgID: %s, pkgObj.Name: %s\n", pkgID, pkgObj.Name)
+			}
+		}
 	}
 }
