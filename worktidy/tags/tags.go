@@ -42,6 +42,10 @@ func NewTagReader() *TagReader {
 
 
 func (p *TagReader) LatestFor(usePath string) string {
+	if len(p.tags) == 0 {
+		return ""
+	}
+
 	var prefix string
 	switch {
 	case usePath == ".":
