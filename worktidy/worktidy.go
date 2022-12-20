@@ -2,7 +2,6 @@ package main
 
 
 import (
-	"errors"
 	"fmt"
 	"go/token"
 	"go/parser"
@@ -10,23 +9,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sync"
 	"strings"
 
-	"golang.org/x/mod/module"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/vcs"
+
+	"github.com/ymd-h/go/worktidy/tags"
 )
 
-var (
-	vcsList = []string{
-		"hg",
-		"git",
-		"svn",
-		"bzr",
+type (
+	Module struct {
+		Version string
+		Require []*modfile.Require
 	}
 )
+
 
 func readParseWork() (*modfile.WorkFile, error) {
 	workByte, err := os.ReadFile("go.work")
@@ -46,30 +43,6 @@ func readParseSubMod(path string) (*modfile.File, error) {
 }
 
 
-func getVCS() (*vcs.Cmd, error) {
-	for _, v := range vcsList {
-		if _, err := os.Stat(fmt.Sprintf(".%s", v)); err == nil {
-			return vcs.ByCmd(v), nil
-		}
-	}
-	return nil, errors.New("Unknown VCS")
-}
-
-func getTags() []string {
-	vcsCmd, err := getVCS()
-	if err != nil {
-		return []string{}
-	}
-
-	tags, err := vcsCmd.Tags(".")
-	if err != nil {
-		return []string{}
-	}
-
-	return tags
-}
-
-
 func main() {
 	goWork, err := readParseWork()
 	if err != nil {
@@ -83,8 +56,13 @@ func main() {
 		wg.Add(1)
 		go func(path string){
 			defer wg.Done()
+			// Since `go mod tidy` is implemented at internal package,
+			// we call external command instead.
+			// Workspace modules might not be published yet, so that
+			// we ignore missing error by adding `-e` option.
 			cmd := exec.Command("go", "mod", "tidy", "-e")
-			cmd.Path = filepath.Clean(path)
+			abs, _ := filepath.Abs(path)
+			cmd.Dir = abs
 			cout, err := cmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("%s\n%s\n", cout, err.Error())
@@ -94,10 +72,8 @@ func main() {
 	wg.Wait()
 
 	// Check workspace requires and latest versions.
-	requires := make(map[string][]*modfile.Require)
-	versions := make(map[string]module.Version)
-	tags := getTags()
-	vRegexp := `v\d+(\.\d+){0,2}`
+	mod := make(map[string]*Module)
+	tag := tags.NewTagReader()
 	for _, use := range goWork.Use {
 		usePath := use.Path
 		goMod, err := readParseSubMod(usePath)
@@ -107,44 +83,16 @@ func main() {
 		}
 
 		modPath := goMod.Module.Mod.Path
-		requires[modPath] = goMod.Require
+		latest := tag.LatestFor(usePath)
+		fmt.Printf("%s: %s\n", modPath, latest)
 
-		var prefix string
-		switch {
-		case usePath == ".":
-			prefix = ""
-		case len(usePath) > 2 && usePath[:2] == "./":
-			prefix = usePath[2:] + "/"
-		default:
-			prefix = usePath + "/"
-		}
-
-		vTag := regexp.MustCompile(fmt.Sprintf(`^%s%s$`, prefix, vRegexp))
-		vTags := []module.Version{}
-		for _, tag := range tags {
-			if !vTag.Match([]byte(tag)) {
-				continue
-			}
-			vTags = append(vTags,
-				module.Version{
-					Path: modPath,
-					Version: tag[len(prefix):],
-				})
-		}
-		if len(vTags) > 0 {
-			module.Sort(vTags)
-			versions[modPath] = vTags[len(vTags)-1]
-		} else {
-			versions[modPath] = module.Version{
-				Path: modPath,
-				Version: "",
-			}
+		mod[modPath] = &Module{
+			Version: latest,
+			Require: goMod.Require,
 		}
 	}
 
-
 	for _, use := range goWork.Use {
-		fmt.Printf("Check Import at %s\n", use.Path)
 		fset := token.NewFileSet()
 		astMap, err := parser.ParseDir(
 			fset,
@@ -158,11 +106,26 @@ func main() {
 			fmt.Println(err.Error())
 			return
 		}
+
+		req := make(map[string]struct{})
 		for _, pkg := range astMap {
-			fmt.Printf("pkg.Name: %s\n", pkg.Name)
-			for pkgID, pkgObj := range pkg.Imports {
-				fmt.Printf("pkgID: %s, pkgObj.Name: %s\n", pkgID, pkgObj.Name)
+			for _, astFile := range pkg.Files {
+				for _, i := range astFile.Imports {
+					if i.Path != nil {
+						v := i.Path.Value[1:len(i.Path.Value)-1]
+						for modPath, _ := range mod {
+							if strings.HasPrefix(v, modPath) {
+								req[modPath] = struct{}{}
+								break
+							}
+						}
+					}
+				}
 			}
+		}
+		fmt.Printf("Submodule: %s\n", use.Path)
+		for p, _ := range req {
+			fmt.Printf("  Depends on %s\n", p)
 		}
 	}
 }
