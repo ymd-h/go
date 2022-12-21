@@ -112,6 +112,7 @@ func main() {
 			for _, astFile := range pkg.Files {
 				for _, i := range astFile.Imports {
 					if i.Path != nil {
+						// Remove double quotation
 						v := i.Path.Value[1:len(i.Path.Value)-1]
 						for modPath, _ := range mod {
 							if strings.HasPrefix(v, modPath) {
