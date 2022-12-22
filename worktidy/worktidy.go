@@ -93,37 +93,43 @@ func main() {
 	}
 
 	for _, use := range goWork.Use {
-		fset := token.NewFileSet()
-		astMap, err := parser.ParseDir(
-			fset,
-			filepath.Clean(use.Path),
-			func(f fs.FileInfo) bool {
-				return !strings.HasSuffix(f.Name(), "_test.go")
-			},
-			parser.ImportsOnly,
-		)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
 		req := make(map[string]struct{})
-		for _, pkg := range astMap {
-			for _, astFile := range pkg.Files {
-				for _, i := range astFile.Imports {
-					if i.Path != nil {
-						// Remove double quotation
-						v := i.Path.Value[1:len(i.Path.Value)-1]
-						for modPath, _ := range mod {
-							if strings.HasPrefix(v, modPath) {
-								req[modPath] = struct{}{}
-								break
-							}
+		fset := token.NewFileSet()
+
+		err := filepath.WalkDir(filepath.Clean(use.Path),
+			func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if d.IsDir() {
+					return nil
+				}
+				if (!strings.HasSuffix(path, ".go")) ||
+					strings.HasSuffix(path, "_test.go") {
+					return nil
+				}
+				astF, err := parser.ParseFile(fset, path, nil, parser.ImportsOnly)
+				if err != nil {
+					return err
+				}
+				for _, i := range astF.Imports {
+					if i.Path == nil {
+						continue
+					}
+					v := i.Path.Value[1:len(i.Path.Value)-1]
+					for modPath, _ := range mod {
+						if strings.HasPrefix(v, modPath) {
+							req[modPath] = struct{}{}
+							break
 						}
 					}
 				}
-			}
+				return nil
+			})
+		if err != nil {
+			fmt.Printf("%s\n", err.Error())
 		}
+
 		fmt.Printf("Submodule: %s\n", use.Path)
 		for p, _ := range req {
 			fmt.Printf("  Depends on %s\n", p)
