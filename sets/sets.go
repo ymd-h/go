@@ -6,6 +6,7 @@ type (
 		Remove(T)
 		Has(T) bool
 		Size() int
+		ToSlice() []T
 		Copy(ISet[T])
 		Clone() ISet[T]
 		Equal(ISet[T]) bool
@@ -62,6 +63,14 @@ func (p *Set[T]) Has(v T) bool {
 
 func (p *Set[T]) Size() int {
 	return len(p.item)
+}
+
+func (p *Set[T]) ToSlice() []T {
+	s := make([]T, 0, len(p.item))
+	for v, _ := range p.item {
+		s = append(s, v)
+	}
+	return s
 }
 
 func (p *Set[T]) Copy(s ISet[T]) {
