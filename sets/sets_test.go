@@ -122,6 +122,29 @@ func TestSize(t *testing.T) {
 		})
 }
 
+func TestToSlice(t *testing.T) {
+	type test struct{
+		set ISet[int]
+		want []int
+	}
+	y.NewTest[test](t).
+		Add("empty", test{
+			set: New[int](),
+			want: []int{},
+		}).
+		Add("some", test{
+			set: FromSlice([]int{1, 2}),
+			want: []int{1, 2},
+		}).
+		Run(func(_ *testing.T, data test) {
+			s := data.set.ToSlice()
+			y.AssertEqual(t, len(s), len(data.want))
+			for _, ss := range s {
+				y.AssertIsIn(t, ss, data.want)
+			}
+		})
+}
+
 
 func TestCopy(t *testing.T) {
 	type test struct {
