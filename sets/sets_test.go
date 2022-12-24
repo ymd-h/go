@@ -101,3 +101,23 @@ func TestHas(t *testing.T) {
 			y.AssertEqual(t, data.set.Has(data.key), data.want)
 		})
 }
+
+
+func TestSize(t *testing.T) {
+	type test struct {
+		set ISet[int]
+		want int
+	}
+	y.NewTest[test](t).
+		Add("empty", test{
+			set: New[int](),
+			want: 0,
+		}).
+		Add("some", test{
+			set: FromSlice([]int{1, 2}),
+			want: 2,
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.set.Size(), data.want)
+		})
+}
