@@ -121,3 +121,30 @@ func TestSize(t *testing.T) {
 			y.AssertEqual(t, data.set.Size(), data.want)
 		})
 }
+
+
+func TestCopy(t *testing.T) {
+	type test struct {
+		setFrom ISet[int]
+		setTo ISet[int]
+		wantSize int
+	}
+	y.NewTest[test](t).
+		Add("no overlap", test{
+			setFrom: FromSlice([]int{1, 2, 3}),
+			setTo: New[int](),
+			wantSize: 3,
+		}).
+		Add("overlap", test{
+			setFrom: FromSlice([]int{1, 2, 3}),
+			setTo: FromSlice([]int{3, 4, 5}),
+			wantSize: 5,
+		}).
+		Run(func(_ *testing.T, data test) {
+			data.setFrom.Copy(data.setTo)
+			y.AssertEqual(t, data.setTo.Size(), data.wantSize)
+			for _, v := range data.setFrom.ToSlice() {
+				y.AssertEqual(t, data.setTo.Has(v), true)
+			}
+		})
+}
