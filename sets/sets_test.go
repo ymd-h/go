@@ -214,3 +214,27 @@ func TestEqual(t *testing.T) {
 			y.AssertEqual(t, data.setA.Equal(data.setB), data.want)
 		})
 }
+
+
+func TestDifference(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want ISet[int]
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			setA: FromSlice([]int{1, 2}),
+			setB: FromSlice([]int{2, 3}),
+			want: FromSlice([]int{1, 3}),
+		}).
+		Add("same", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: New[int](),
+		}).
+		Run(func(_ *testing.T, data test) {
+			d := data.setA.Difference(data.setB)
+			y.AssertEqual(t, d.Equal(data.want), true)
+		})
+}
