@@ -171,3 +171,23 @@ func TestCopy(t *testing.T) {
 			}
 		})
 }
+
+
+func TestClone(t *testing.T) {
+	type test struct {
+		set ISet[int]
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			set: FromSlice([]int{1, 2, 3}),
+		}).
+		Run(func(_ *testing.T, data test) {
+			c := data.set.Clone()
+			y.AssertEqual(t, c.Size(), data.set.Size())
+			for _, e := range c.ToSlice() {
+				y.AssertEqual(t, data.set.Has(e), true)
+			}
+			data.set.Add(999999)
+			y.AssertEqual(t, c.Size() + 1, data.set.Size())
+		})
+}
