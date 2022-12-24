@@ -238,3 +238,27 @@ func TestDifference(t *testing.T) {
 			y.AssertEqual(t, d.Equal(data.want), true)
 		})
 }
+
+
+func TestIntersection(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want ISet[int]
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{1, 4, 5}),
+			want: FromSlice([]int{1}),
+		}).
+		Add("empty", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{4, 5, 6}),
+			want: New[int](),
+		}).
+		Run(func(_ *testing.T, data test) {
+			i := data.setA.Intersection(data.setB)
+			y.AssertEqual(t, i.Equal(data.want), true)
+		})
+}
