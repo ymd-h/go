@@ -286,3 +286,58 @@ func TestUnion(t *testing.T) {
 			y.AssertEqual(t, u.Equal(data.want), true)
 		})
 }
+
+
+func TestSubsetOf(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want bool
+	}
+	y.NewTest[test](t).
+		Add("proper", test{
+			setA: FromSlice([]int{1, 2}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: true,
+		}).
+		Add("same", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: true,
+		}).
+		Add("not", test{
+			setA: FromSlice([]int{1, 2, 4}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: false,
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.setA.SubsetOf(data.setB), data.want)
+		})
+}
+
+func TestProperSubsetOf(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want bool
+	}
+	y.NewTest[test](t).
+		Add("proper", test{
+			setA: FromSlice([]int{1, 2}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: true,
+		}).
+		Add("same", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: false,
+		}).
+		Add("not", test{
+			setA: FromSlice([]int{1, 2, 4}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: false,
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.setA.ProperSubsetOf(data.setB), data.want)
+		})
+}
