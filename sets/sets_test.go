@@ -262,3 +262,27 @@ func TestIntersection(t *testing.T) {
 			y.AssertEqual(t, i.Equal(data.want), true)
 		})
 }
+
+
+func TestUnion(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want ISet[int]
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{3, 4, 5}),
+			want: FromSlice([]int{1, 2, 3, 4, 5}),
+		}).
+		Add("same", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{1, 2, 3}),
+			want: FromSlice([]int{1, 2, 3}),
+		}).
+		Run(func(_ *testing.T, data test) {
+			u := data.setA.Union(data.setB)
+			y.AssertEqual(t, u.Equal(data.want), true)
+		})
+}
