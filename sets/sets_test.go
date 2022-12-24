@@ -54,3 +54,27 @@ func TestAdd(t *testing.T) {
 			y.AssertEqual(t, data.set.Has(data.key), true)
 		})
 }
+
+
+func TestRemove(t *testing.T) {
+	type test struct {
+		set ISet[string]
+		key string
+		wantSize int
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			set: FromSlice[string]([]string{"abc"}),
+			key: "abc",
+			wantSize: 0,
+		}).
+		Add("empty", test{
+			set: New[string](),
+			key: "abc",
+			wantSize: 0,
+		}).
+		Run(func(_ *testing.T, data test) {
+			data.set.Remove(data.key)
+			y.AssertEqual(t, data.set.Size(), data.wantSize)
+		})
+}
