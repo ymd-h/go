@@ -191,3 +191,26 @@ func TestClone(t *testing.T) {
 			y.AssertEqual(t, c.Size() + 1, data.set.Size())
 		})
 }
+
+
+func TestEqual(t *testing.T) {
+	type test struct {
+		setA ISet[int]
+		setB ISet[int]
+		want bool
+	}
+	y.NewTest[test](t).
+		Add("true", test{
+			setA: FromSlice([]int{1, 2, 3}),
+			setB: FromSlice([]int{2, 3, 1}),
+			want: true,
+		}).
+		Add("false", test{
+			setA: FromSlice([]int{1, 2}),
+			setB: FromSlice([]int{2, 3}),
+			want: false,
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.setA.Equal(data.setB), data.want)
+		})
+}
