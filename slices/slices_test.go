@@ -168,3 +168,42 @@ func TestSize(t *testing.T) {
 			y.AssertEqual(t, data.init.Size(), data.want)
 		})
 }
+
+func TestBinarySearchFunc(t *testing.T) {
+	type test struct {
+		init ISlice[int]
+		target int
+		found bool
+		idx int
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewSliceFrom([]int{1, 2, 3, 4}),
+			target: 3,
+			found: true,
+			idx: 2,
+		}).
+		Add("not found", test{
+			init: NewSliceFrom([]int{1, 2, 3, 4}),
+			target: 5,
+			found: false,
+			idx: -1,
+		}).
+		Run(func(_ *testing.T, data test) {
+			f := func(a, b int) int {
+				switch {
+				case a > b:
+					return 1
+				case a < b:
+					return -1
+				default:
+					return 0
+				}
+			}
+			idx, ok := data.init.BynarySearchFunc(data.target, f)
+			y.AssertEqual(t, ok, data.found)
+			if ok {
+				y.AssertEqual(t, idx, data.idx)
+			}
+		})
+}
