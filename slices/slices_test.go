@@ -238,6 +238,8 @@ func TestBinarySearchFunc(t *testing.T) {
 }
 
 
+func TestClip(t *testing.T) {}
+
 func TestClone(t *testing.T) {
 	type test struct {
 		init ISlice[int]
@@ -286,3 +288,38 @@ func TestCompact(t *testing.T) {
 			y.AssertEqual(t, data.init.Equal(data.want), true)
 		})
 }
+
+
+func TestCompactFunc(t *testing.T) {}
+
+func TestContains(t *testing.T) {}
+
+func TestContainsFunc(t *testing.T) {}
+
+func TestDelete(t *testing.T) {}
+
+func TestEqual(t *testing.T) {}
+
+func TestEqualFunc(t *testing.T) {}
+
+func TestGrow(t *testing.T) {}
+
+func TestIndex(t *testing.T) {}
+
+func TestIndexFunc(t *testing.T) {}
+
+func TestInsert(t *testing.T) {}
+
+func TestIsSorted(t *testing.T) {}
+
+func TestIsSortedFunc(t *testing.T) {}
+
+func TestReplace(t *testing.T) {}
+
+func TestSort(t *testing.T) {}
+
+func TestSortFunc(t *testing.T) {}
+
+func TestTryComparable(t *testing.T) {}
+
+func TestTryOrdered(t *testing.T) {}
