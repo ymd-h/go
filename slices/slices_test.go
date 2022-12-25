@@ -200,7 +200,7 @@ func TestBinarySearchFunc(t *testing.T) {
 					return 0
 				}
 			}
-			idx, ok := data.init.BynarySearchFunc(data.target, f)
+			idx, ok := data.init.BinarySearchFunc(data.target, f)
 			y.AssertEqual(t, ok, data.found)
 			if ok {
 				y.AssertEqual(t, idx, data.idx)

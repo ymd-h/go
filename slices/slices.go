@@ -34,7 +34,7 @@ type (
 		// `elems`: `...E` - Elements to be added
 		Append(elems ...E)
 		Size() int
-		BynarySearchFunc(E, func(E, E) int) (int, bool)
+		BinarySearchFunc(E, func(E, E) int) (int, bool)
 		Clip()
 		Clone() ISlice[E]
 		CompactFunc(func (E, E) bool)
@@ -61,7 +61,7 @@ type (
 	}
 	IOrderedSlice[E any] interface {
 		IComparableSlice[E]
-		BynarySearch(E) (int, bool)
+		BinarySearch(E) (int, bool)
 		Compare(IOrderedSlice[E]) int
 		IsSorted() bool
 		Sort()
@@ -287,7 +287,7 @@ func search(n int, gt func(int) bool) int {
 	return start
 }
 
-func (s *Slice[E]) BynarySearchFunc(target E, cmp func(E, E) int) (int, bool) {
+func (s *Slice[E]) BinarySearchFunc(target E, cmp func(E, E) int) (int, bool) {
 	p := search(len(s.item), func(i int) bool { return cmp(s.item[i], target) >= 0 })
 	if (p >= len(s.item)) || (cmp(s.item[p], target) != 0) {
 		return p, false
@@ -530,7 +530,7 @@ func (s *ComparableSlice[E]) TryOrdered() (IOrderedSlice[E], bool) {
 
 
 
-func (s *OrderedSlice[E]) BynarySearch(target E) (int, bool) {
+func (s *OrderedSlice[E]) BinarySearch(target E) (int, bool) {
 	p := search(len(s.item), func(i int) bool { return s.item[i] >= target })
 	if (p >= len(s.item)) || (s.item[p] != target) {
 		return p, false
