@@ -257,3 +257,32 @@ func TestClone(t *testing.T) {
 			}
 		})
 }
+
+
+func TestCompact(t *testing.T) {
+	type test struct {
+		init IComparableSlice[int]
+		want IComparableSlice[int]
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewComparableSliceFrom([]int{1, 1, 2, 3, 4, 4}),
+			want: NewComparableSliceFrom([]int{1, 2, 3, 4}),
+		}).
+		Add("same", test{
+			init: NewComparableSliceFrom([]int{1, 2, 3}),
+			want: NewComparableSliceFrom([]int{1, 2, 3}),
+		}).
+		Add("empty", test{
+			init: NewComparableSlice[int](),
+			want: NewComparableSlice[int](),
+		}).
+		Add("not sort", test{
+			init: NewComparableSliceFrom([]int{1, 3, 2, 3, 2}),
+			want: NewComparableSliceFrom([]int{1, 3, 2, 3, 2}),
+		}).
+		Run(func(_ *testing.T, data test) {
+			data.init.Compact()
+			y.AssertEqual(t, data.init.Equal(data.want), true)
+		})
+}
