@@ -236,3 +236,24 @@ func TestBinarySearchFunc(t *testing.T) {
 			}
 		})
 }
+
+
+func TestClone(t *testing.T) {
+	type test struct {
+		init ISlice[int]
+	}
+	y.NewTest[test](t).
+		Add("some", test{
+			init: NewSliceFrom([]int{1, 2, 3}),
+		}).
+		Add("empty", test{
+			init: NewSlice[int](),
+		}).
+		Run(func(_ *testing.T, data test) {
+			c := data.init.Clone()
+			y.AssertEqual(t, data.init.Size(), c.Size())
+			for i:= 0; i < c.Size(); i++ {
+				y.AssertEqual(t, data.init.Get(i), c.Get(i))
+			}
+		})
+}
