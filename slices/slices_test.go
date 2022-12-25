@@ -148,3 +148,23 @@ func TestAppend(t *testing.T) {
 			}
 		})
 }
+
+
+func TestSize(t *testing.T) {
+	type test struct {
+		init ISlice[string]
+		want int
+	}
+	y.NewTest[test](t).
+		Add("empty", test{
+			init: NewSlice[string](),
+			want: 0,
+		}).
+		Add("some", test{
+			init: NewSliceFrom([]string{"a"}),
+			want: 1,
+		}).
+		Run(func(_ *testing.T, data test) {
+			y.AssertEqual(t, data.init.Size(), data.want)
+		})
+}
