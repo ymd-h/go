@@ -169,6 +169,35 @@ func TestSize(t *testing.T) {
 		})
 }
 
+func TestBinarySearch(t *testing.T) {
+	type test struct {
+		init IOrderedSlice[int]
+		target int
+		found bool
+		idx int
+	}
+	y.NewTest[test](t).
+		Add("simple", test{
+			init: NewOrderedSliceFrom([]int{1, 2, 3, 4}),
+			target: 3,
+			found: true,
+			idx: 2,
+		}).
+		Add("not found", test{
+			init: NewOrderedSliceFrom([]int{1, 2, 3}),
+			target: 4,
+			found: false,
+			idx: -1,
+		}).
+		Run(func(_ *testing.T, data test) {
+			idx, ok := data.init.BinarySearch(data.target)
+			y.AssertEqual(t, ok, data.found)
+			if ok {
+				y.AssertEqual(t, idx, data.idx)
+			}
+		})
+}
+
 func TestBinarySearchFunc(t *testing.T) {
 	type test struct {
 		init ISlice[int]
