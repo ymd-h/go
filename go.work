@@ -6,6 +6,6 @@ use (
 	./sets
 	./slices
 	./testing
-	./wokerpool
+	./workerpool
 	./worktidy
 )
