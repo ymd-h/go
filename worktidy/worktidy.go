@@ -16,12 +16,13 @@ import (
 
 	"github.com/ymd-h/go/sets"
 	"github.com/ymd-h/go/worktidy/tags"
+	"github.com/ymd-h/go/worktidy/resolve"
 )
 
 type (
 	Module struct {
 		Version string
-		Require []*modfile.Require
+		ModFile *modfile.File
 		UsePath string
 	}
 )
@@ -90,16 +91,17 @@ func main() {
 
 		mod[modPath] = &Module{
 			Version: latest,
-			Require: goMod.Require,
+			ModFile: goMod,
 			UsePath: usePath,
 		}
 	}
 
-	for _, use := range goWork.Use {
+	directDeps := make(map[string]sets.ISet[string], len(goWork.Use))
+	for p, m := range mod {
 		req := sets.New[string]()
 		fset := token.NewFileSet()
 
-		err := filepath.WalkDir(filepath.Clean(use.Path),
+		err := filepath.WalkDir(filepath.Clean(m.UsePath),
 			func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
@@ -121,7 +123,7 @@ func main() {
 					}
 					v := i.Path.Value[1:len(i.Path.Value)-1]
 					for modPath, modV := range mod {
-						if use.Path == modV.UsePath {
+						if m.UsePath == modV.UsePath {
 							// Skip Self
 							continue
 						}
@@ -138,9 +140,74 @@ func main() {
 			fmt.Printf("%s\n", err.Error())
 		}
 
-		fmt.Printf("Submodule: %s\n", use.Path)
-		for _, p := range req.ToSlice() {
-			fmt.Printf("  Depends on %s\n", p)
+		fmt.Printf("Submodule: %s\n", m.UsePath)
+		for _, r := range req.ToSlice() {
+			fmt.Printf("  Depends on %s\n", r)
+		}
+
+		directDeps[p] = req
+	}
+
+	totalDeps, err := resolve.Resolve(directDeps)
+	if err != nil {
+		fmt.Printf("Fail to Resolve Dependancy Graph: %w", err)
+		return
+	}
+
+	for p, m := range mod {
+		d := directDeps[p]
+		t := totalDeps[p]
+
+		// Indirect
+		i := sets.New[string]()
+		for _, td := range t.ToSlice() {
+			if !d.Has(td) {
+				i.Add(td)
+			}
+		}
+
+		req := sets.New[*modfile.Require]()
+		for _, r := range m.ModFile.Require {
+			if r == nil {
+				continue
+			}
+			req.Add(r)
+		}
+
+		for _, dd := range d.ToSlice() {
+			m.ModFile.AddNewRequire(dd, mod[dd].Version, false)
+
+			for _, r := range mod[dd].ModFile.Require {
+				if r == nil {
+					continue
+				}
+				if !req.Has(r) {
+					req.Add(r)
+					m.ModFile.AddNewRequire(
+						r.Mod.Version.Path,
+						r.Mod.Version.Version,
+						true,
+					)
+				}
+			}
+		}
+
+		for _, id := range i.ToSlice() {
+			m.ModFile.AddNewRequire(id, mod[id].Version, true)
+
+			for _, r := range mod[id].ModFile.Require {
+				if r == nil {
+					continue
+				}
+				if !req.Has(r) {
+					req.Add(r)
+					m.ModFile.AddNewRequire(
+						r.Mod.Version.Path,
+						r.Mod.Version.Version,
+						true,
+					)
+				}
+			}
 		}
 	}
 }
