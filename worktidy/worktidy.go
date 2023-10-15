@@ -209,5 +209,17 @@ func main() {
 				}
 			}
 		}
+
+		b, err := m.ModFile.Format()
+		if err != nil {
+			fmt.Printf("Fail to Format %s: %w\n", m.UsePath, err)
+			continue
+		}
+
+		err = os.WriteFile(filepath.Join(m.UsePath, "go.mod"), b, 0664)
+		if err != nil {
+			fmt.Printf("Fail to Write %s/go.mod: %w", m.UsePath, err)
+			continue
+		}
 	}
 }
