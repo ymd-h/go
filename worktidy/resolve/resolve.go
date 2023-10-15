@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	DepsSets = map[string]sets.Set[string]
+	DepsSets = map[string]sets.ISet[string]
 )
 
 
