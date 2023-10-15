@@ -21,6 +21,7 @@ type (
 	Module struct {
 		Version string
 		Require []*modfile.Require
+		UsePath string
 	}
 )
 
@@ -89,6 +90,7 @@ func main() {
 		mod[modPath] = &Module{
 			Version: latest,
 			Require: goMod.Require,
+			UsePath: usePath,
 		}
 	}
 
@@ -117,7 +119,12 @@ func main() {
 						continue
 					}
 					v := i.Path.Value[1:len(i.Path.Value)-1]
-					for modPath, _ := range mod {
+					for modPath, modV := range mod {
+						if use.Path == modV.UsePath {
+							// Skip Self
+							continue
+						}
+
 						if strings.HasPrefix(v, modPath) {
 							req[modPath] = struct{}{}
 							break
