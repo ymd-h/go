@@ -4,6 +4,7 @@ use (
 	./encoding
 	./maps
 	./queuechan
+	./request
 	./sets
 	./slices
 	./testing
