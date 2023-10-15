@@ -184,8 +184,8 @@ func main() {
 				if !req.Has(r) {
 					req.Add(r)
 					m.ModFile.AddNewRequire(
-						r.Mod.Version.Path,
-						r.Mod.Version.Version,
+						r.Mod.Path,
+						r.Mod.Version,
 						true,
 					)
 				}
@@ -202,8 +202,8 @@ func main() {
 				if !req.Has(r) {
 					req.Add(r)
 					m.ModFile.AddNewRequire(
-						r.Mod.Version.Path,
-						r.Mod.Version.Version,
+						r.Mod.Path,
+						r.Mod.Version,
 						true,
 					)
 				}
