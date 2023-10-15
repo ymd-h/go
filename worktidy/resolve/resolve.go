@@ -11,14 +11,14 @@ type (
 )
 
 
-func Resolve(unresolved DepSets) (DepSets, error) {
-	resolved := DepSets{}
+func Resolve(unresolved DepsSets) (DepsSets, error) {
+	resolved := DepsSets{}
 
 	for mod, deps := range unresolved {
 		stack := deps.ToSlice()
 
 		for len(stack) > 0 {
-			d = stack[0]
+			d := stack[0]
 			stack = stack[1:]
 
 			if u, ok := unresolved[d]; ok {
