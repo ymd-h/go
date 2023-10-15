@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/mod/modfile"
 
+	"github.com/ymd-h/go/sets"
 	"github.com/ymd-h/go/worktidy/tags"
 )
 
@@ -95,7 +96,7 @@ func main() {
 	}
 
 	for _, use := range goWork.Use {
-		req := make(map[string]struct{})
+		req := sets.New[string]()
 		fset := token.NewFileSet()
 
 		err := filepath.WalkDir(filepath.Clean(use.Path),
@@ -126,7 +127,7 @@ func main() {
 						}
 
 						if strings.HasPrefix(v, modPath) {
-							req[modPath] = struct{}{}
+							req.Add(modPath)
 							break
 						}
 					}
@@ -138,7 +139,7 @@ func main() {
 		}
 
 		fmt.Printf("Submodule: %s\n", use.Path)
-		for p, _ := range req {
+		for _, p := range req.ToSlice() {
 			fmt.Printf("  Depends on %s\n", p)
 		}
 	}
