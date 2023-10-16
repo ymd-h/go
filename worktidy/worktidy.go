@@ -166,29 +166,27 @@ func main() {
 			}
 		}
 
-		req := sets.New[*modfile.Require]()
+		req := sets.New[string]()
 		for _, r := range m.ModFile.Require {
 			if r == nil {
 				continue
 			}
-			req.Add(r)
+			req.Add(r.Mod.Path)
 		}
 
 		for _, dd := range d.ToSlice() {
 			m.ModFile.AddNewRequire(dd, mod[dd].Version, false)
 
 			for _, r := range mod[dd].ModFile.Require {
-				if r == nil {
+				if (r == nil) || (req.Has(r.Mod.Path)) {
 					continue
 				}
-				if !req.Has(r) {
-					req.Add(r)
-					m.ModFile.AddNewRequire(
-						r.Mod.Path,
-						r.Mod.Version,
-						true,
-					)
-				}
+				req.Add(r.Mod.Path)
+				m.ModFile.AddNewRequire(
+					r.Mod.Path,
+					r.Mod.Version,
+					true,
+				)
 			}
 		}
 
@@ -196,17 +194,15 @@ func main() {
 			m.ModFile.AddNewRequire(id, mod[id].Version, true)
 
 			for _, r := range mod[id].ModFile.Require {
-				if r == nil {
+				if (r == nil) || (req.Has(r.Mod.Path)) {
 					continue
 				}
-				if !req.Has(r) {
-					req.Add(r)
-					m.ModFile.AddNewRequire(
-						r.Mod.Path,
-						r.Mod.Version,
-						true,
-					)
-				}
+				req.Add(r.Mod.Path)
+				m.ModFile.AddNewRequire(
+					r.Mod.Path,
+					r.Mod.Version,
+					true,
+				)
 			}
 		}
 
