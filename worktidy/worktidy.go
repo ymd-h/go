@@ -15,7 +15,7 @@ import (
 	"golang.org/x/mod/modfile"
 
 	"github.com/ymd-h/go/sets"
-	"github.com/ymd-h/go/worktidy/tags"
+	"github.com/ymd-h/go/worktidy/repo"
 	"github.com/ymd-h/go/worktidy/resolve"
 )
 
@@ -76,7 +76,12 @@ func main() {
 
 	// Check workspace requires and latest versions.
 	mod := make(map[string]*Module)
-	tag := tags.NewTagReader()
+	tag, err := repo.NewLocalRepo(&repo.Git{dir: "."})
+	if err != nil {
+		fmt.Printf("Fail to Get Local Repo: %w\n", err)
+		return
+	}
+
 	for _, use := range goWork.Use {
 		usePath := use.Path
 		goMod, err := readParseSubMod(usePath)
@@ -86,7 +91,7 @@ func main() {
 		}
 
 		modPath := goMod.Module.Mod.Path
-		latest := tag.LatestFor(usePath)
+		latest := tag.Version(usePath)
 		fmt.Printf("%s: %s\n", modPath, latest)
 
 		mod[modPath] = &Module{
