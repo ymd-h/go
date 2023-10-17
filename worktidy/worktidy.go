@@ -206,6 +206,8 @@ func main() {
 			}
 		}
 
+		m.ModFile.SortBlocks()
+		m.ModFile.Cleanup()
 		b, err := m.ModFile.Format()
 		if err != nil {
 			fmt.Printf("Fail to Format %s: %w\n", m.UsePath, err)
