@@ -61,7 +61,7 @@ func (g *Git) Timestamp(revision string) (string, error) {
 		return "", fmt.Errorf("Fail to Get Timestamp with git: %w", err)
 	}
 
-	unix, err := strconv.Atoi(string(cout))
+	unix, err := strconv.ParseInt(string(cout), 10, 64)
 	if err != nil {
 		return "", fmt.Errorf("Fail to Convert Timestamp: %w", err)
 	}
