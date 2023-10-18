@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,11 @@ type (
 const (
 	vRegexp = `v\d+(\.\d+){0,2}`
 )
+
+func NewGit(dir string) *Git {
+	abs, _ := filepath.Abs(dir)
+	return &Git{dir: abs}
+}
 
 func (g *Git) Tags() ([]string, error) {
 	cmd := exec.Command("git", "tag")
