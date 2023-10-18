@@ -9,8 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"strings"
+	"sync"
 
 	"golang.org/x/mod/modfile"
 
