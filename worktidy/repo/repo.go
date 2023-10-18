@@ -49,7 +49,7 @@ func (g *Git) Tags() ([]string, error) {
 }
 
 func (g *Git) LatestRevision() (string, error) {
-	cmd := exec.Command("git", "log", "-n", "1", "--oneline", "--format='%H'")
+	cmd := exec.Command("git", "log", "-n", "1", "--oneline", "--format=%H")
 	cmd.Dir = g.dir
 	cout, err := cmd.Output()
 	if err != nil {
@@ -59,15 +59,15 @@ func (g *Git) LatestRevision() (string, error) {
 }
 
 func (g *Git) Timestamp(revision string) (string, error) {
-	cmd := exec.Command("git", "log", "-n", "1", "--oneline", "--format='%cd'",
-		"--date='unix'", revision)
+	cmd := exec.Command("git", "log", "-n", "1", "--oneline", "--format=%cd",
+		"--date=unix", revision)
 	cmd.Dir = g.dir
 	cout, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("Fail to Get Timestamp with git: %w", err)
 	}
 
-	unix, err := strconv.ParseInt(string(cout), 10, 64)
+	unix, err := strconv.ParseInt(string(cout[:len(cout)-1]), 10, 64)
 	if err != nil {
 		return "", fmt.Errorf("Fail to Convert Timestamp: %w", err)
 	}
