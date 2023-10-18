@@ -78,7 +78,7 @@ func main() {
 	mod := make(map[string]*Module)
 	tag, err := repo.NewLocalRepo(repo.NewGit("."))
 	if err != nil {
-		fmt.Printf("Fail to Get Local Repo: %w\n", err)
+		fmt.Printf("Fail to Get Local Repo: %v\n", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func main() {
 
 	totalDeps, err := resolve.Resolve(directDeps)
 	if err != nil {
-		fmt.Printf("Fail to Resolve Dependancy Graph: %w", err)
+		fmt.Printf("Fail to Resolve Dependancy Graph: %v\n", err)
 		return
 	}
 
@@ -215,13 +215,13 @@ func main() {
 		m.ModFile.Cleanup()
 		b, err := m.ModFile.Format()
 		if err != nil {
-			fmt.Printf("Fail to Format %s: %w\n", m.UsePath, err)
+			fmt.Printf("Fail to Format %s: %v\n", m.UsePath, err)
 			continue
 		}
 
 		err = os.WriteFile(filepath.Join(m.UsePath, "go.mod"), b, 0664)
 		if err != nil {
-			fmt.Printf("Fail to Write %s/go.mod: %w", m.UsePath, err)
+			fmt.Printf("Fail to Write %s/go.mod: %v\n", m.UsePath, err)
 			continue
 		}
 	}
