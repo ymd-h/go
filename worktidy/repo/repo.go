@@ -3,10 +3,9 @@ package repo
 import (
 	"fmt"
 	"regexp"
-	"os"
 	"os/exec"
 	"strconv"
-	"string"
+	"strings"
 	"time"
 
 	"golang.org/x/mod/module"
