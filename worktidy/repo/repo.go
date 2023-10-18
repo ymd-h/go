@@ -39,7 +39,7 @@ func (g *Git) Tags() ([]string, error) {
 	if err != nil {
 		return []string{}, fmt.Errorf("Fail to Get Tags with git: %w", err)
 	}
-	return strings.Split(cout, "\n"), nil
+	return strings.Split(string(cout), "\n"), nil
 }
 
 func (g *Git) LatestRevision() (string, error) {
@@ -49,7 +49,7 @@ func (g *Git) LatestRevision() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Fail to Get Latest Revision with git: %w", err)
 	}
-	return cout[:12], nil
+	return string(cout[:12]), nil
 }
 
 func (g *Git) Timestamp(revision string) (string, error) {
@@ -61,7 +61,7 @@ func (g *Git) Timestamp(revision string) (string, error) {
 		return "", fmt.Errorf("Fail to Get Timestamp with git: %w", err)
 	}
 
-	unix, err := strconv.Atoi(cout)
+	unix, err := strconv.Atoi(string(cout))
 	if err != nil {
 		return "", fmt.Errorf("Fail to Convert Timestamp: %w", err)
 	}
