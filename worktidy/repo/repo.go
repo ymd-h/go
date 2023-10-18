@@ -67,7 +67,7 @@ func (g *Git) Timestamp(revision string) (string, error) {
 	}
 
 	t := time.Unix(unix, 0).In(time.UTC)
-	return t.Format("20060102150405")
+	return t.Format("20060102150405"), nil
 }
 
 func NewLocalRepo(vcs VCS) (*LocalRepo, error) {
@@ -89,7 +89,7 @@ func NewLocalRepo(vcs VCS) (*LocalRepo, error) {
 	return &LocalRepo{
 		tags: tags,
 		pseudoVersion: fmt.Sprintf("v0.0.0-%s-%s", timestamp, rev),
-	}
+	}, nil
 }
 
 
