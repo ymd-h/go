@@ -17,10 +17,29 @@ func TestText(t *testing.T) {
 			arg: "00000000-0000-0000-0000-000000000000",
 			ok: true,
 		}).
+		Add("short", test{
+			arg: "00000000-0000-0000-0000-00000000000",
+			ok: false,
+		}).
+		Add("long", test{
+			arg: "00000000-0000-0000-0000-0000000000000",
+			ok: false,
+		}).
+		Add("invalid", test{
+			arg: "00000000-0000-x000-0000-000000000000",
+			ok: false,
+		}).
 		Run(func (_ *testing.T, data test) {
 			u, err := FromString(data.arg)
-			if err != nil {
-				t.Errorf("From String: %v\n", err)
+			if data.ok {
+				if err != nil {
+					t.Errorf("Fail: From String: %v\n", err)
+					return
+				}
+			} else {
+				if err == nil {
+					t.Errorf("Must Faill: From String\n")
+				}
 				return
 			}
 
