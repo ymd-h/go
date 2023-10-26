@@ -46,7 +46,7 @@ func (u *UUID) Bytes() []byte {
 }
 
 func (u *UUID) MarshalText() ([]byte, error) {
-	return []byte(u.String()), nil
+	return []byte(fmt.Sprintf(`"%s"`, u.String())), nil
 }
 
 func h2b(b byte) (byte, error) {
@@ -87,6 +87,18 @@ func isHyphen(b byte) bool {
 }
 
 func (u *UUID) UnmarshalText(data []byte) error {
+	n := len(data)
+	if n > 2 {
+		f := data[0]
+		e := data[n-1]
+		if (f==e) && ((f == 0x22) || (f == 0x27) || (f == 0x60)) {
+			// 0x22 => "
+			// 0x27 => '
+			// 0x60 => `
+			data = data[1:n-1]
+		}
+	}
+
 	if len(data) != 36 {
 		return fmt.Errorf("Wrong Data Length: %d", len(data))
 	}
