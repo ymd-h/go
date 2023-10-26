@@ -29,6 +29,10 @@ func TestText(t *testing.T) {
 			arg: "00000000-0000-x000-0000-000000000000",
 			ok: false,
 		}).
+		Add("all", test{
+			arg: "01234567-89ab-cdef-0123-456789abcdef",
+			ok: true,
+		}).
 		Run(func (_ *testing.T, data test) {
 			u, err := FromString(data.arg)
 			if data.ok {
