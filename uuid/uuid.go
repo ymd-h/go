@@ -1,7 +1,11 @@
 package uuid
 
 import (
+	"encoding/binary"
 	"fmt"
+	"time"
+
+	"github.com/ymd-h/go/prng/device"
 )
 
 type(
@@ -9,6 +13,7 @@ type(
 		b [16]byte
 	}
 
+	UUIDv4 UUID
 	UUIDv7 UUID
 )
 
@@ -137,4 +142,96 @@ func (u *UUID) UnmarshalBinary(data []byte) error {
 	}
 
 	return nil
+}
+
+
+func (u *UUID) TryUUIDv4() (*UUIDv4, error) {
+	version := u.b[6] >> 4
+	if version != 4 {
+		return nil, fmt.Errorf("Version is not 4: %d", version)
+	}
+
+	variant := u.b[8] >> 6
+	if variant != 8 {
+		return nil, fmt.Errorf("Variant is not 0x10: %d", variant)
+	}
+
+	return &UUIDv4{ b: u.b }, nil
+}
+
+
+func NewUUIDv4() *UUIDv4 {
+	prng := device.Device64{}
+
+	r1 := prng.Next()
+	r2 := prng.Next()
+
+	var u UUIDv4
+	binary.NativeEndian.PutUint64(u.b[:4], r1)
+	binary.NativeEndian.PutUint64(u.b[4:], r2)
+
+	var version byte = 0b0100
+	var variant byte = 0b10
+	u.b[6] = (u.b[6] & 0x0F) | (version << 4)
+	u.b[8] = (u.b[8] & 0b00111111) | (variant << 6)
+
+	return &u
+}
+
+func (u *UUIDv4) UnmarshalText(text []byte) error {
+	var uuid UUID
+
+	err := uuid.UnmarshalText(text)
+	if err != nil {
+		return err
+	}
+
+	u4, err := uuid.TryUUIDv4()
+	if err != nil {
+		return err
+	}
+
+	u.b = u4.b
+	return nil
+}
+
+func (u *UUIDv4) UnmarshalBinary(data []byte) error {
+	var uuid UUID
+
+	err := uuid.UnmarshalBinary(data)
+	if err != nil {
+		return err
+	}
+
+	u4, err := uuid.TryUUIDv4()
+	if err != nil {
+		return err
+	}
+
+	u.b = u4.b
+	return nil
+}
+
+func NewUUIDv7() *UUIDv7 {
+	t := time.Now()
+	unix_ms := t.UnixMilli()
+
+	p32 := device.Device32{}
+	r1 := p32.Next()
+
+	p64 := device.Device64{}
+	r2 := p64.Next()
+
+	var u UUIDv7
+	binary.BigEndian.PutUint16(u.b[:2], uint16(unix_ms >> 32))
+	binary.BigEndian.PutUint32(u.b[2:6], uint32(unix_ms && 0xFFFFFFFF))
+	binary.NativeEndian.PutUint16(u.b[6:8], uint16(r1 >> 16))
+	binary.NativeEndian.PutUint64(u.b[8:], r2)
+
+	var version byte = 0b0100
+	var variant byte = 0b10
+	u.b[6] = (u.b[6] & 0x0F) | (version << 4)
+	u.b[8] = (u.b[8] & 0b00111111) | (variant << 6)
+
+	return &u
 }
