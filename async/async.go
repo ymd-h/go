@@ -59,14 +59,6 @@ func RunWithError[V any](f func() (V, error)) *Job[ValueWithError[V]] {
 	return Run(g)
 }
 
-func (p *Job[V]) IsDone() bool {
-	select {
-	case <- p.done:
-		return true
-	default:
-		return false
-	}
-}
 
 func (p *Job[V]) put(c chan <- V) bool {
 	select {
