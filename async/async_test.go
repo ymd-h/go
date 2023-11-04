@@ -1,6 +1,7 @@
 package async
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -85,4 +86,23 @@ func TestFirst(t *testing.T){
 		t.Errorf("All Job must success: %d != %d\n", n, success)
 		return
 	}
+}
+
+func TestRunError(t *testing.T){
+	t.Run("error", func(_ *testing.T){
+		job := RunWithError(func() (struct{}, error){
+			return struct{}{}, fmt.Errorf("Error")
+		})
+
+		v, ok := job.GetWait()
+		if !ok {
+			t.Errorf("Must Success\n")
+			return
+		}
+
+		if v.Error == nil {
+			t.Errorf("Must have error\n")
+			return
+		}
+	})
 }
