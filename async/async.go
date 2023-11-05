@@ -6,57 +6,70 @@ import (
 
 
 type (
+	WithError[V any] struct {
+		Value V
+		Error error
+	}
+
 	Job[V any] struct {
 		send chan <- (chan <- V)
 		done <- chan struct{}
 	}
 
-	ValueWithError[V any] struct {
-		Value V
-		Error error
+	Worker struct {
+		send chan <- func()
+	}
+
+	IWorker interface {
+		SendToWorker(func())
 	}
 )
+
+
+func work[V any](f func() V, c <- chan (chan <- V), done chan <- struct{}) {
+	defer close(done)
+	v := f()
+
+	conn, ok := <- c
+	if !ok {
+		return
+	}
+
+	for {
+		select {
+		case conn <- v:
+			return
+		case recv, ok := <- c:
+			if ok {
+				conn = recv
+			} else {
+				// 'c' is closed
+				conn <- v
+				return
+			}
+		}
+	}
+}
+
+func wrapWithError[V any](f func() (V, error)) (func() WithError[V]) {
+	return func() WithError[V] {
+		v, err := f()
+		return WithError[V]{ Value: v, Error: err }
+	}
+}
 
 
 func Run[V any](f func() V) *Job[V] {
 	c := make(chan (chan <- V))
 	done := make(chan struct{})
 
-	go func(){
-		defer close(done)
-		v := f()
-
-		conn, ok := <- c
-		if !ok {
-			return
-		}
-
-		for {
-			select {
-			case conn <- v:
-				return
-			case recv, ok := <- c:
-				if ok {
-					conn = recv
-				} else {
-					// 'c' is closed
-					conn <- v
-					return
-				}
-			}
-		}
-	}()
+	go work(f, c, done)
 
 	return &Job[V]{ send: c, done: done }
 }
 
-func RunWithError[V any](f func() (V, error)) *Job[ValueWithError[V]] {
-	g := func() ValueWithError[V] {
-		v, err := f()
-		return ValueWithError[V]{ Value: v, Error: err }
-	}
-
-	return Run(g)
+func RunWithError[V any](f func() (V, error)) *Job[WithError[V]] {
+	return Run(wrapWithError(f))
 }
 
 
@@ -68,7 +81,6 @@ func (p *Job[V]) put(c chan <- V) bool {
 		return false
 	}
 }
-
 
 func (p *Job[V]) GetWait() (V, bool) {
 	c := make(chan V)
@@ -126,6 +138,47 @@ func (p *Job[V]) Channel() <- chan V {
 
 	return c
 }
+
+
+func NewWorker(n uint) *Worker {
+	c := make(chan func())
+
+	for i := uint(0); i < n; i++ {
+		go func(){
+			for {
+				f, ok := <- c
+				if !ok {
+					return
+				}
+				f()
+			}
+		}()
+	}
+
+	return &Worker{
+		send: c,
+	}
+}
+
+func (w *Worker) SendToWorker(f func()) {
+	w.send <- f
+}
+
+func RunAtWorker[V any](w IWorker, f func() V) *Job[V] {
+	c := make(chan (chan <- V))
+	done := make(chan struct{})
+
+	w.SendToWorker(func(){
+		work(f, c, done)
+	})
+
+	return &Job[V]{send: c, done: done}
+}
+
+func RunWithErrorAtWorker[V any](w IWorker, f func() (V, error)) *Job[WithError[V]] {
+	return RunAtWorker(w, wrapWithError(f))
+}
+
 
 func First[V any](jobs ...*Job[V]) (V, bool) {
 	c := make(chan V)
