@@ -88,6 +88,45 @@ func TestFirst(t *testing.T){
 	}
 }
 
+
+func TestFirstDivide(t *testing.T){
+	n := 5
+	jobs := make([]*Job[struct{}], 0, n)
+
+	for i := 0; i < n; i++ {
+		jobs = append(jobs, Run(func() struct{} {
+			return struct{}{}
+		}))
+	}
+
+	success := 0
+	_, ok := First(jobs...)
+	if ok {
+		success += 1
+	}
+
+	for {
+		if _, ok = First(jobs[:n/2]...); !ok {
+			break
+		}
+		success += 1
+	}
+
+	for {
+		if _, ok = First(jobs[n/2:]...); !ok {
+			break
+		}
+		success += 1
+	}
+
+	if success != n {
+		t.Errorf("All jobs must success: %d != %d\n", n, success)
+		return
+	}
+}
+
+
+
 func TestRunError(t *testing.T){
 	t.Run("error", func(_ *testing.T){
 		job := RunWithError(func() (struct{}, error){
