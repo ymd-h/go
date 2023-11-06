@@ -20,10 +20,6 @@ type (
 		send chan <- (chan <- V)
 		done <- chan struct{}
 	}
-
-	IWorker interface {
-		SendToWorker(func())
-	}
 )
 
 

@@ -1,6 +1,10 @@
 package async
 
 type (
+	IWorker interface {
+		SendToWorker(func())
+	}
+
 	Worker struct {
 		send chan <- func()
 	}
