@@ -11,6 +11,11 @@ type (
 		Error error
 	}
 
+	Optional[V any] struct {
+		Value V
+		OK bool
+	}
+
 	Job[V any] struct {
 		send chan <- (chan <- V)
 		done <- chan struct{}
@@ -153,4 +158,16 @@ func First[V any](jobs ...*Job[V]) (V, bool) {
 
 	v, ok := <-c
 	return v, ok
+}
+
+
+func MaybeAll[V any](jobs ...*Job[V]) []Optional[V] {
+	vs := make([]Optional[V], 0, len(jobs))
+
+	for _, job := range jobs {
+		v, ok := vs.GetWait()
+		vs = append(vs, Optional[V]{ Value: v, OK: ok })
+	}
+
+	return vs
 }
