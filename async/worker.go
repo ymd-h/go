@@ -4,6 +4,10 @@ type (
 	Worker struct {
 		send chan <- func()
 	}
+
+	LazyWorker struct {
+		send chan <- func()
+	}
 )
 
 func NewWorker(n uint) *Worker {
@@ -27,6 +31,34 @@ func NewWorker(n uint) *Worker {
 }
 
 func (w *Worker) SendToWorker(f func()) {
+	w.send <- f
+}
+
+func NewLazyWorker(n uint) *LazyWorker {
+	c := make(chan func())
+	sem := make(chan struct{}, n)
+
+	go func(){
+		for {
+			f, ok := <- c
+			if !ok {
+				return
+			}
+
+			sem <- struct{}{}
+			go func(){
+				defer func(){ <-sem }()
+				f()
+			}()
+		}
+	}()
+
+	return &LazyWorker{
+		send: c,
+	}
+}
+
+func (w *LazyWorker) SendToWorker(f func()) {
 	w.send <- f
 }
 
