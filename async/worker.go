@@ -1,15 +1,16 @@
 package async
 
+import (
+	"context"
+)
+
 type (
 	IWorker interface {
-		SendToWorker(func())
+		Send(func())
+		SendWithContext(context.Context, func()) bool
 	}
 
 	Worker struct {
-		send chan <- func()
-	}
-
-	LazyWorker struct {
 		send chan <- func()
 	}
 )
@@ -34,11 +35,7 @@ func NewWorker(n uint) *Worker {
 	}
 }
 
-func (w *Worker) SendToWorker(f func()) {
-	w.send <- f
-}
-
-func NewLazyWorker(n uint) *LazyWorker {
+func NewLazyWorker(n uint) *Worker {
 	c := make(chan func())
 	sem := make(chan struct{}, n)
 
@@ -57,20 +54,30 @@ func NewLazyWorker(n uint) *LazyWorker {
 		}
 	}()
 
-	return &LazyWorker{
+	return &Worker{
 		send: c,
 	}
 }
 
-func (w *LazyWorker) SendToWorker(f func()) {
-	w.send <- f
+func (w *Worker) Send(f func()) {
+	return w.SendWithContext(context.Background())
 }
+
+func (w *Worker) SendWithContext(ctx context.Context, f func()) bool {
+	select {
+	case w.send <- f:
+		return true
+	case <- ctx.Done():
+		return false
+	}
+}
+
 
 func RunAtWorker[V any](w IWorker, f func() V) *Job[V] {
 	c := make(chan (chan <- V))
 	done := make(chan struct{})
 
-	w.SendToWorker(func(){
+	w.Send(func(){
 		work(f, c, done)
 	})
 
