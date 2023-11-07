@@ -7,7 +7,7 @@ import (
 type (
 	IWorker interface {
 		Send(func())
-		SendWithContext(context.Context, func()) bool
+		SendWithContext(context.Context, func()) error
 	}
 
 	Worker struct {
@@ -63,12 +63,12 @@ func (w *Worker) Send(f func()) {
 	w.SendWithContext(context.Background())
 }
 
-func (w *Worker) SendWithContext(ctx context.Context, f func()) bool {
+func (w *Worker) SendWithContext(ctx context.Context, f func()) error {
 	select {
 	case w.send <- f:
-		return true
+		return nil
 	case <- ctx.Done():
-		return false
+		return ctx.Err()
 	}
 }
 
