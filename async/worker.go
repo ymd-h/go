@@ -60,7 +60,7 @@ func NewLazyWorker(n uint) *Worker {
 }
 
 func (w *Worker) Send(f func()) {
-	return w.SendWithContext(context.Background())
+	w.SendWithContext(context.Background())
 }
 
 func (w *Worker) SendWithContext(ctx context.Context, f func()) bool {
