@@ -127,6 +127,11 @@ func (p *Job[V]) Channel() <- chan V {
 	if !p.put(c) {
 		// Fail to put receive channel
 		close(c)
+	} else {
+		go func(){
+			<- p.done
+			close(c)
+		}()
 	}
 
 	return c
