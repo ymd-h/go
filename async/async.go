@@ -48,7 +48,7 @@ func work[V any](f func() V, c <- chan (chan <- V), done chan <- struct{}) {
 	}
 }
 
-func wrapWithError[V any](f func() (V, error)) (func() WithError[V]) {
+func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 	return func() WithError[V] {
 		v, err := f()
 		return WithError[V]{ Value: v, Error: err }
@@ -63,10 +63,6 @@ func Run[V any](f func() V) *Job[V] {
 	go work(f, c, done)
 
 	return &Job[V]{ send: c, done: done }
-}
-
-func RunWithError[V any](f func() (V, error)) *Job[WithError[V]] {
-	return Run(wrapWithError(f))
 }
 
 

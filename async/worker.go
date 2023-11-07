@@ -83,7 +83,3 @@ func RunAtWorker[V any](w IWorker, f func() V) *Job[V] {
 
 	return &Job[V]{send: c, done: done}
 }
-
-func RunWithErrorAtWorker[V any](w IWorker, f func() (V, error)) *Job[WithError[V]] {
-	return RunAtWorker(w, wrapWithError(f))
-}
