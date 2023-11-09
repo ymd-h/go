@@ -1,7 +1,8 @@
 package async
 
 import (
-	"time"
+	"context"
+	"errors"
 )
 
 
@@ -11,15 +12,16 @@ type (
 		Error error
 	}
 
-	Optional[V any] struct {
-		Value V
-		OK bool
-	}
-
 	Job[V any] struct {
 		send chan <- (chan <- V)
 		done <- chan struct{}
 	}
+)
+
+var (
+	ErrAlreadyDone = errors.New("Job has already been done")
+	ErrSendReceiver = fmt.Errorf("Fail to send receiver channel: %w", ErrAlreadyDone)
+	ErrReceiverClosed = errors.New("Job receiver channnel has been closed")
 )
 
 
@@ -75,50 +77,29 @@ func (p *Job[V]) put(c chan <- V) bool {
 	}
 }
 
-func (p *Job[V]) GetWait() (V, bool) {
-	c := make(chan V)
-
-	if p.put(c) {
-		select {
-		case v, ok := <- c:
-			return v, ok
-		case <- p.done:
-		}
-
-	}
-
-	var v V
-	return v, false
+func (p *Job[V]) Wait() (V, error) {
+	return p.WaitContext(context.Background())
 }
 
-func (p *Job[V]) GetWaitDuration(d time.Duration) (V, bool) {
+func (p *Job[V]) WaitContext(ctx context.Context) (V, error) {
 	c := make(chan V)
-	if p.put(c) {
-		select {
-		case v, ok := <- c:
-			return v, ok
-		case <- p.done:
-		case <- time.After(d):
-		}
+	var v V
+
+	if !p.put(c) {
+		return v, ErrSendReceiver
 	}
 
-	var v V
-	return v, false
-}
-
-func (p *Job[V]) Get() (V, bool) {
-	c := make(chan V)
-	if p.put(c) {
-		select {
-		case v, ok := <- c:
-			return v, ok
-		case <- p.done:
-		default:
+	select {
+	case v, ok := <- c:
+		if ok {
+			return v, nil
 		}
+		return v, ErrReceiverClosed
+	case <- p.done:
+		return v, ErrAlreadyDone
+	case <- ctx.Done()
+		return v, ctx.Err()
 	}
-
-	var v V
-	return v, false
 }
 
 func (p *Job[V]) Channel() <- chan V {
@@ -138,7 +119,7 @@ func (p *Job[V]) Channel() <- chan V {
 }
 
 
-func First[V any](jobs ...*Job[V]) (V, bool) {
+func First[V any](jobs ...*Job[V]) (V, error) {
 	c := make(chan V)
 	done := true
 
@@ -150,20 +131,20 @@ func First[V any](jobs ...*Job[V]) (V, bool) {
 
 	if done {
 		var v V
-		return v, false
+		return v, ErrAlreadyDone
 	}
 
-	v, ok := <-c
-	return v, ok
+	v, err := <-c
+	return v, err
 }
 
 
-func MaybeAll[V any](jobs ...*Job[V]) []Optional[V] {
-	vs := make([]Optional[V], 0, len(jobs))
+func MaybeAll[V any](jobs ...*Job[V]) []WithError[V] {
+	vs := make([]WithError[V], 0, len(jobs))
 
 	for _, job := range jobs {
-		v, ok := vs.GetWait()
-		vs = append(vs, Optional[V]{ Value: v, OK: ok })
+		v, err := vs.Wait()
+		vs = append(vs, WithError[V]{ Value: v, Error: err })
 	}
 
 	return vs
