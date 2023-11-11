@@ -87,6 +87,17 @@ func TestFirst(t *testing.T){
 		t.Errorf("All Job must success: %d != %d\n", n, success)
 		return
 	}
+
+	_, err := First(jobs...)
+	if err == nil {
+		t.Errorf("When all jobs done, First() must fail\n")
+		return
+	}
+
+	if !errors.Is(err, ErrAlreadyDone) {
+		t.Errorf("Error must be `ErrAlreadyDone`: %v (%T)\n", err, err)
+		return
+	}
 }
 
 
