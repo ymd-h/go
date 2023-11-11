@@ -97,7 +97,7 @@ func (p *Job[V]) WaitContext(ctx context.Context) (V, error) {
 		return v, ErrReceiverClosed
 	case <- p.done:
 		return v, ErrAlreadyDone
-	case <- ctx.Done()
+	case <- ctx.Done():
 		return v, ctx.Err()
 	}
 }
