@@ -51,6 +51,22 @@ func work[V any](f func() V, c <- chan (chan <- V), done chan <- struct{}) {
 	}
 }
 
+func wait[V any](ctx context.Context, c <- chan V, done <- chan struct{}) (V, error) {
+	var v V
+
+	select {
+	case v, ok := <- c:
+		if ok {
+			return v, nil
+		}
+		return v, ErrReceiverClosed
+	case <- done:
+		return v, ErrAlreadyDone
+	case <- ctx.Done():
+		return v, ctx.Err()
+	}
+}
+
 func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 	return func() WithError[V] {
 		v, err := f()
@@ -84,23 +100,13 @@ func (p *Job[V]) Wait() (V, error) {
 
 func (p *Job[V]) WaitContext(ctx context.Context) (V, error) {
 	c := make(chan V)
-	var v V
 
 	if !p.put(c) {
+		var v V
 		return v, ErrSendReceiver
 	}
 
-	select {
-	case v, ok := <- c:
-		if ok {
-			return v, nil
-		}
-		return v, ErrReceiverClosed
-	case <- p.done:
-		return v, ErrAlreadyDone
-	case <- ctx.Done():
-		return v, ctx.Err()
-	}
+	return wait(ctx, c, p.done)
 }
 
 func (p *Job[V]) Channel() <- chan V {
