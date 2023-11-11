@@ -135,8 +135,12 @@ func First[V any](jobs ...*Job[V]) (V, error) {
 		return v, ErrAlreadyDone
 	}
 
-	v, err := <-c
-	return v, err
+	v, ok := <-c
+	if ok {
+		return v, nil
+	}
+
+	return v, ErrAlreadyDone
 }
 
 
