@@ -150,7 +150,7 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 		for _, dd := range d {
 			select {
 			case <- cancel:
-				// When `FirstContext` finish (with success or error),
+				// When `FirstContext()` finish (with success or error),
 				// finish this goroutine, too.
 				return
 			case <- dd:
