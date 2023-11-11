@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 )
 
 
@@ -128,25 +129,26 @@ func (p *Job[V]) Channel() <- chan V {
 
 func First[V any](jobs ...*Job[V]) (V, error) {
 	c := make(chan V)
-	done := true
+	done := make(chan struct {})
+
+	var wg sync.WaitGroup
 
 	for _, job := range jobs {
 		if job.put(c) {
-			done = false
+			wg.Add(1)
+			go func(){
+				<- job.done
+				wg.Done()
+			}()
 		}
 	}
 
-	if done {
-		var v V
-		return v, ErrAlreadyDone
-	}
+	go func(){
+		wg.Wait()
+		close(done)
+	}()
 
-	v, ok := <-c
-	if ok {
-		return v, nil
-	}
-
-	return v, ErrAlreadyDone
+	return wait(context.TODO(), c, done)
 }
 
 
