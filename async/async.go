@@ -161,12 +161,15 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 	return wait(ctx, c, done)
 }
 
-
 func MaybeAll[V any](jobs ...*Job[V]) []WithError[V] {
+	return MaybeAllContext(context.Background(), jobs...)
+}
+
+func MaybeAllContext[V any](ctx context.Context, jobs ...*Job[V]) []WithError[V] {
 	vs := make([]WithError[V], 0, len(jobs))
 
 	for _, job := range jobs {
-		v, err := job.Wait()
+		v, err := job.WaitContext(ctx)
 		vs = append(vs, WithError[V]{ Value: v, Error: err })
 	}
 
