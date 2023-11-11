@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 )
 
 
@@ -132,23 +131,31 @@ func First[V any](jobs ...*Job[V]) (V, error) {
 
 func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 	c := make(chan V)
-	done := make(chan struct {})
-
-	var wg sync.WaitGroup
+	d := make([] <- chan struct {}, 0, len(jobs))
 
 	for _, job := range jobs {
 		if job.put(c) {
-			wg.Add(1)
-			go func(){
-				defer wg.Done()
-				<- job.done
-			}()
+			d = append(d, job.done)
 		}
 	}
 
+	done := make(chan struct {})
+	cancel := make(chan struct {})
+	defer close(cancel)
+
 	go func(){
+		// When all jobs are done, notify `wait()`
 		defer close(done)
-		wg.Wait()
+
+		for _, dd := range d {
+			select {
+			case <- cancel:
+				// When `FirstContext` finish (with success or error),
+				// finish this goroutine, too.
+				return
+			case <- dd:
+			}
+		}
 	}()
 
 	return wait(ctx, c, done)
