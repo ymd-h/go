@@ -32,9 +32,9 @@ func TestRun(t *testing.T) {
 		t.Run(test.name, func(_ *testing.T){
 			job := Run(test.f)
 
-			v, ok := job.GetWait()
-			if !ok {
-				t.Errorf("Fail to Get Wait\n")
+			v, err := job.Wait()
+			if err != nil {
+				t.Errorf("Fail to Wait\n")
 				return
 			}
 			if test.want != v {
@@ -42,15 +42,15 @@ func TestRun(t *testing.T) {
 				return
 			}
 
-			v, ok = job.GetWait()
-			if ok {
-				t.Errorf("Must not success to Get Wait\n")
+			_, err = job.Wait()
+			if err == nil {
+				t.Errorf("Must not success to Wait\n")
 				return
 			}
 
 			ch := job.Channel()
 			select {
-			case v, ok = <- ch:
+			case _, ok := <- ch:
 				if ok {
 					t.Errorf("Closed channel must fail to extract\n")
 					return
@@ -77,7 +77,7 @@ func TestFirst(t *testing.T){
 
 	success := 0
 	for {
-		if _, ok := First(jobs...); !ok {
+		if _, err := First(jobs...); err != nil {
 			break
 		}
 		success += 1
@@ -100,20 +100,20 @@ func TestFirstDivide(t *testing.T){
 	}
 
 	success := 0
-	_, ok := First(jobs...)
-	if ok {
+	_, err := First(jobs...)
+	if err == nil {
 		success += 1
 	}
 
 	for {
-		if _, ok = First(jobs[:n/2]...); !ok {
+		if _, err = First(jobs[:n/2]...); err != nil {
 			break
 		}
 		success += 1
 	}
 
 	for {
-		if _, ok = First(jobs[n/2:]...); !ok {
+		if _, err = First(jobs[n/2:]...); err != nil {
 			break
 		}
 		success += 1
@@ -129,12 +129,12 @@ func TestFirstDivide(t *testing.T){
 
 func TestRunError(t *testing.T){
 	t.Run("error", func(_ *testing.T){
-		job := RunWithError(func() (struct{}, error){
+		job := Run(WrapErrorFunc(func() (struct{}, error){
 			return struct{}{}, fmt.Errorf("Error")
-		})
+		}))
 
-		v, ok := job.GetWait()
-		if !ok {
+		v, err := job.Wait()
+		if err != nil {
 			t.Errorf("Must Success\n")
 			return
 		}
