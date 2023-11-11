@@ -137,15 +137,15 @@ func First[V any](jobs ...*Job[V]) (V, error) {
 		if job.put(c) {
 			wg.Add(1)
 			go func(){
+				defer wg.Done()
 				<- job.done
-				wg.Done()
 			}()
 		}
 	}
 
 	go func(){
+		defer close(done)
 		wg.Wait()
-		close(done)
 	}()
 
 	return wait(context.TODO(), c, done)
