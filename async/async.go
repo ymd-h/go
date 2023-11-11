@@ -52,8 +52,6 @@ func work[V any](f func() V, c <- chan (chan <- V), done chan <- struct{}) {
 }
 
 func wait[V any](ctx context.Context, c <- chan V, done <- chan struct{}) (V, error) {
-	var v V
-
 	select {
 	case v, ok := <- c:
 		if ok {
@@ -61,8 +59,10 @@ func wait[V any](ctx context.Context, c <- chan V, done <- chan struct{}) (V, er
 		}
 		return v, ErrReceiverClosed
 	case <- done:
+		var v V
 		return v, ErrAlreadyDone
 	case <- ctx.Done():
+		var v V
 		return v, ctx.Err()
 	}
 }
