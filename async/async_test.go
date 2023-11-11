@@ -1,6 +1,7 @@
 package async
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -125,6 +126,34 @@ func TestFirstDivide(t *testing.T){
 	}
 }
 
+
+func TestMaybeAll(t *testing.T){
+	n := 5
+	jobs := make([]*Job[struct{}], 0, n)
+
+	for i := 0; i < n; i++ {
+		jobs = append(jobs, Run(func() struct{} { return struct{}{} }))
+	}
+
+	for _, r := range MaybeAll(jobs...) {
+		if r.Error != nil {
+			t.Errorf("All jobs must success: %v\n", r.Error)
+			return
+		}
+	}
+
+	for _, r := range MaybeAll(jobs...) {
+		if r.Error == nil {
+			t.Errorf("All jobs must fail\n")
+			return
+		}
+
+		if !errors.Is(r.Error, ErrAlreadyDone) {
+			t.Errorf("Error must be `ErrAlreadyDone`: %v (%T)\n", r.Error, r.Error)
+			return
+		}
+	}
+}
 
 
 func TestRunError(t *testing.T){
