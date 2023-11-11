@@ -144,7 +144,7 @@ func MaybeAll[V any](jobs ...*Job[V]) []WithError[V] {
 	vs := make([]WithError[V], 0, len(jobs))
 
 	for _, job := range jobs {
-		v, err := vs.Wait()
+		v, err := job.Wait()
 		vs = append(vs, WithError[V]{ Value: v, Error: err })
 	}
 
