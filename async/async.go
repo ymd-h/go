@@ -126,8 +126,11 @@ func (p *Job[V]) Channel() <- chan V {
 	return c
 }
 
-
 func First[V any](jobs ...*Job[V]) (V, error) {
+	return FirstContext(context.Background(), jobs...)
+}
+
+func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 	c := make(chan V)
 	done := make(chan struct {})
 
@@ -148,7 +151,7 @@ func First[V any](jobs ...*Job[V]) (V, error) {
 		wg.Wait()
 	}()
 
-	return wait(context.TODO(), c, done)
+	return wait(ctx, c, done)
 }
 
 
