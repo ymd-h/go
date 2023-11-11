@@ -6,8 +6,7 @@ import (
 
 type (
 	IWorker interface {
-		Send(func())
-		SendWithContext(context.Context, func()) error
+		Send(context.Context, func()) error
 	}
 
 	Worker struct {
@@ -59,11 +58,7 @@ func NewLazyWorker(n uint) *Worker {
 	}
 }
 
-func (w *Worker) Send(f func()) {
-	w.SendWithContext(context.Background())
-}
-
-func (w *Worker) SendWithContext(ctx context.Context, f func()) error {
+func (w *Worker) Send(ctx context.Context, f func()) error {
 	select {
 	case w.send <- f:
 		return nil
@@ -73,13 +68,13 @@ func (w *Worker) SendWithContext(ctx context.Context, f func()) error {
 }
 
 
-func RunAtWorker[V any](w IWorker, f func() V) *Job[V] {
+func RunAtWorker[V any](ctx context.Context, w IWorker, f func() V) (*Job[V], error) {
 	c := make(chan (chan <- V))
 	done := make(chan struct{})
 
-	w.Send(func(){
-		work(f, c, done)
-	})
+	if err := w.Send(ctx, func(){ work(f, c, done) }); err != nil {
+		return nil, err
+	}
 
-	return &Job[V]{send: c, done: done}
+	return &Job[V]{send: c, done: done}, nil
 }
