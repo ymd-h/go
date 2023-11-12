@@ -54,6 +54,13 @@ func Run[V any](f func() V) *Job[V] {
 	return job
 }
 
+func (p *Job[V]) Ready() <- chan struct{} {
+	return p.ready
+}
+
+func (p *Job[V]) Consumed() <- chan struct{} {
+	return p.consumed
+}
 
 func (p *Job[V]) Wait() (V, error) {
 	return p.WaitContext(context.Background())
@@ -91,12 +98,12 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 		case <- ctx.Done():
 			var v V
 			return v, context.Cause(ctx)
-		case <- job.consumed:
+		case <- job.Consumed():
 			// Skip already consumed Job.
 		default:
 			go func(ijob *Job[V]){
 				select {
-				case <- ijob.ready:
+				case <- ijob.Ready():
 				case <- ctx.Done():
 					return
 				}
@@ -112,7 +119,7 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 	go func(){
 		for _, job := range jobs {
 			select {
-			case <- job.consumed:
+			case <- job.Consumed():
 			case <- ctx.Done():
 				return
 			}
