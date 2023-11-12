@@ -159,7 +159,7 @@ func (c *Client) HeadWithContext(ctx context.Context, url string) (*Response, er
 }
 
 func (c *Client) Head(url string) (*Response, error) {
-	return c.HeadWithContext(context.Backgound(), url)
+	return c.HeadWithContext(context.Background(), url)
 }
 
 func (c *Client) PostWithContext(
@@ -259,7 +259,7 @@ func PutWithContext(
 }
 
 func Put(url string, request, response any) (*Response, error) {
-	return PutWithContext(context.Backgound(), url, request, response)
+	return PutWithContext(context.Background(), url, request, response)
 }
 
 func DeleteWitchContext(
