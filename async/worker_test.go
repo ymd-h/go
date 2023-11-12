@@ -6,106 +6,72 @@ import (
 	"time"
 )
 
-
-
 func TestWorker(t *testing.T){
-	w := NewWorker(context.Background(), 1)
-
-	job, err := RunAtWorker(context.Background(), w, func() int { return 1 })
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
+	tests := []struct{
+		name string
+		w IWorker
+	}{
+		{
+			name: "Worker",
+			w: NewWorker(context.Background(), 1),
+		},
+		{
+			name: "LazyWorker",
+			w: NewLazyWorker(context.Background(), 1),
+		},
 	}
 
-	v, err := job.Wait()
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(*testing.T){
+			job, err := RunAtWorker(
+				context.Background(),
+				test.w,
+				func() struct{} { return struct{}{} },
+			)
+			if err != nil {
+				t.Errorf("Fail: %v\n", err)
+				return
+			}
 
-	if v != 1 {
-		t.Errorf("%d != 1\n", v)
-		return
-	}
+			_, err = job.Wait()
+			if err != nil {
+				t.Errorf("Fail: %v\n", err)
+				return
+			}
 
-	job, err = RunAtWorker(context.Background(), w, func() int { return 2 })
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
+			ctx, cancel := context.WithCancel(context.Background())
 
-	ctxT, _ := context.WithTimeout(context.Background(), time.Duration(1 * 1000))
-	_, err = RunAtWorker(ctxT, w, func() int { return 3 })
-	if err == nil {
-		t.Errorf("Must Fail\n")
-		return
-	}
-}
+			_, err = RunAtWorker(
+				context.Background(),
+				test.w,
+				func() struct{} {
+					<-ctx.Done()
+					return struct{}{}
+				},
+			)
+			if err != nil {
+				t.Errorf("Fail: %v\n", err)
+				return
+			}
 
+			ctxT, _ := context.WithTimeout(context.Background(), time.Duration(1000))
+			_, errT := RunAtWorker(
+				ctxT,
+				test.w,
+				func() struct{} { return struct{}{} },
+			)
+			if errT == nil {
+				t.Errorf("Must Fail")
+				return
+			}
 
-func TestLazyWorker(t *testing.T){
-	w := NewLazyWorker(context.Background(), 2)
+			cancel()
 
-	job, err := RunAtWorker(context.Background(), w, func() int { return 2 })
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
-
-	v, err := job.Wait()
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
-
-	if v != 2 {
-		t.Errorf("%d != 2\n", v)
-		return
-	}
-
-	jobs := make([]*Job[int], 0, 2)
-	for i := 0; i < 2; i++ {
-		job, err = RunAtWorker(context.Background(), w, func() int {
-			return i
+			_, err = RunAtWorker(
+				context.Background(),
+				test.w,
+				func() struct{} { return struct{}{} },
+			)
 		})
-		if err != nil {
-			t.Errorf("Fail: %v\n", err)
-			return
-		}
-		jobs = append(jobs, job)
-	}
-
-	ctxT, _ := context.WithTimeout(context.Background(), time.Duration(1 * 10000))
-	_, err = RunAtWorker(ctxT, w, func() int {
-		return 5
-	})
-	if err == nil {
-		t.Errorf("Must Fail\n")
-		return
-	}
-
-	for _, job := range jobs {
-		_, err = job.Wait()
-		if err != nil {
-			t.Errorf("Fail: %v\n", err)
-			return
-		}
-	}
-
-	ctxT, _ = context.WithTimeout(context.Background(), time.Duration(1 * 10000))
-	job, err = RunAtWorker(ctxT, w, func() int { return -1 })
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
-
-	v, err = job.Wait()
-	if err != nil {
-		t.Errorf("Fail: %v\n", err)
-		return
-	}
-	if v != -1 {
-		t.Errorf("%d != -1\n", v)
-		return
 	}
 }

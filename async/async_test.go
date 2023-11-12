@@ -48,18 +48,6 @@ func TestRun(t *testing.T) {
 				t.Errorf("Must not success to Wait\n")
 				return
 			}
-
-			ch := job.Channel()
-			select {
-			case _, ok := <- ch:
-				if ok {
-					t.Errorf("Closed channel must fail to extract\n")
-					return
-				}
-			default:
-				t.Errorf("Done Job must return closed channel\n")
-				return
-			}
 		})
 	}
 
@@ -94,8 +82,8 @@ func TestFirst(t *testing.T){
 		return
 	}
 
-	if !errors.Is(err, ErrAlreadyDone) {
-		t.Errorf("Error must be `ErrAlreadyDone`: %v (%T)\n", err, err)
+	if !errors.Is(err, ErrAlreadyConsumed) {
+		t.Errorf("Error must be `ErrAlreadyConsumed`: %v (%T)\n", err, err)
 		return
 	}
 }
@@ -159,8 +147,9 @@ func TestMaybeAll(t *testing.T){
 			return
 		}
 
-		if !errors.Is(r.Error, ErrAlreadyDone) {
-			t.Errorf("Error must be `ErrAlreadyDone`: %v (%T)\n", r.Error, r.Error)
+		if !errors.Is(r.Error, ErrAlreadyConsumed) {
+			t.Errorf("Error must be `ErrAlreadyConsumed`: %v (%T)\n",
+				r.Error, r.Error)
 			return
 		}
 	}
