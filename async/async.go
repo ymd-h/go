@@ -81,10 +81,8 @@ func First[V any](jobs ...*Job[V]) (V, error) {
 func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 	c := make(chan *Job[V])
 
-	cancel := make(chan struct{})
-	defer close(cancel)
+	ctx, cause := context.WithCancelCause(ctx)
 
-	n := 0
 	for _, job := range jobs {
 		select {
 		case <- ctx.Done():
@@ -93,27 +91,37 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 		case <- job.consumed:
 			// Skip already consumed Job.
 		default:
-			n += 1
 			go func(ijob *Job[V]){
 				select {
 				case <- ijob.ready:
-				case <- cancel:
+				case <- ctx.Done():
 					return
 				}
 
 				select {
 				case c <- ijob:
-				case <- cancel:
+				case <- ctx.Done():
 				}
 			}(job)
 		}
 	}
 
-	for i := 0; i < n; i++ {
+	go func(){
+		for _, job := range jobs {
+			select {
+			case <- job.consumed:
+			case <- ctx.Done():
+				return
+			}
+		}
+		cause(ErrAlreadyConsumed)
+	}()
+
+	for {
 		select {
 		case <- ctx.Done():
 			var v V
-			return v, ctx.Err()
+			return v, context.Cause(ctx)
 		case job, ok := <- c:
 			if !ok {
 				var v V
@@ -126,9 +134,6 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 			}
 		}
 	}
-
-	var v V
-	return v, ErrAlreadyConsumed
 }
 
 func MaybeAll[V any](jobs ...*Job[V]) []WithError[V] {
