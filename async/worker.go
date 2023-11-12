@@ -98,7 +98,7 @@ func (w *Worker) Send(ctx context.Context, f func()) error {
 	case <- w.done:
 		return ErrAlreadyShutdown
 	case <- ctx.Done():
-		return ctx.Err()
+		return context.Cause(ctx)
 	}
 }
 

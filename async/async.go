@@ -69,7 +69,7 @@ func (p *Job[V]) WaitContext(ctx context.Context) (V, error) {
 		return v, ErrAlreadyConsumed
 	case <- ctx.Done():
 		var v V
-		return v, ctx.Err()
+		return v, context.Cause(ctx)
 	}
 }
 
@@ -90,7 +90,7 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 		select {
 		case <- ctx.Done():
 			var v V
-			return v, ctx.Err()
+			return v, context.Cause(ctx)
 		case <- job.consumed:
 			// Skip already consumed Job.
 		default:
