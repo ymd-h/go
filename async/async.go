@@ -3,7 +3,6 @@ package async
 import (
 	"context"
 	"errors"
-	"fmt"
 )
 
 
@@ -14,58 +13,24 @@ type (
 	}
 
 	Job[V any] struct {
-		send chan <- (chan <- V)
-		done <- chan struct{}
+		recv <- chan V
+		ready <- chan struct{}
+		consumed chan struct{}
 	}
 )
 
 var (
-	ErrAlreadyDone = errors.New("Job has already been done")
-	ErrSendReceiver = fmt.Errorf("Fail to send receiver channel: %w", ErrAlreadyDone)
+	ErrAlreadyConsumed = errors.New("Job has already been consumed")
 	ErrReceiverClosed = errors.New("Job receiver channnel has been closed")
 )
 
 
-func work[V any](f func() V, c <- chan (chan <- V), done chan <- struct{}) {
-	defer close(done)
-	v := f()
-
-	conn, ok := <- c
-	if !ok {
-		return
-	}
-
-	for {
-		select {
-		case conn <- v:
-			return
-		case recv, ok := <- c:
-			if ok {
-				conn = recv
-			} else {
-				// 'c' is closed
-				conn <- v
-				return
-			}
-		}
-	}
+func work[V any](f func() V, recv chan <- V, ready chan <- struct{}) {
+	defer close(ready)
+	defer close(recv)
+	recv <- f()
 }
 
-func wait[V any](ctx context.Context, c <- chan V, done <- chan struct{}) (V, error) {
-	select {
-	case v, ok := <- c:
-		if ok {
-			return v, nil
-		}
-		return v, ErrReceiverClosed
-	case <- done:
-		var v V
-		return v, ErrAlreadyDone
-	case <- ctx.Done():
-		var v V
-		return v, ctx.Err()
-	}
-}
 
 func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 	return func() WithError[V] {
@@ -76,89 +41,90 @@ func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 
 
 func Run[V any](f func() V) *Job[V] {
-	c := make(chan (chan <- V))
-	done := make(chan struct{})
+	recv := make(chan V, 1)
+	ready := make(chan struct{})
+	consumed := make(chan struct{})
 
-	go work(f, c, done)
+	go work(f, recv, ready)
 
-	return &Job[V]{ send: c, done: done }
+	return &Job[V]{ recv: recv, ready: ready, consumed: consumed }
 }
 
-
-func (p *Job[V]) put(c chan <- V) bool {
-	select {
-	case p.send <- c:
-		return true
-	case <- p.done:
-		return false
-	}
-}
 
 func (p *Job[V]) Wait() (V, error) {
 	return p.WaitContext(context.Background())
 }
 
 func (p *Job[V]) WaitContext(ctx context.Context) (V, error) {
-	c := make(chan V)
-
-	if !p.put(c) {
+	select {
+	case v, ok := <- p.recv:
+		if ok {
+			close(p.consumed)
+			return v, nil
+		}
+		return v, ErrAlreadyConsumed
+	case <- ctx.Done():
 		var v V
-		return v, ErrSendReceiver
+		return v, ctx.Err()
 	}
-
-	return wait(ctx, c, p.done)
 }
 
-func (p *Job[V]) Channel() <- chan V {
-	c := make(chan V)
-
-	if !p.put(c) {
-		// Fail to put receive channel
-		close(c)
-	} else {
-		go func(){
-			<- p.done
-			close(c)
-		}()
-	}
-
-	return c
-}
 
 func First[V any](jobs ...*Job[V]) (V, error) {
 	return FirstContext(context.Background(), jobs...)
 }
 
 func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
-	c := make(chan V)
-	d := make([] <- chan struct {}, 0, len(jobs))
+	c := make(chan *Job[V])
 
+	cancel := make(chan struct{})
+	defer close(cancel)
+
+	n := 0
 	for _, job := range jobs {
-		if job.put(c) {
-			d = append(d, job.done)
+		select {
+		case <- ctx.Done():
+			var v V
+			return v, ctx.Err()
+		case <- job.consumed:
+			// Skip already consumed Job.
+		default:
+			n += 1
+			go func(ijob *Job[V]){
+				select {
+				case <- ijob.ready:
+				case <- cancel:
+					return
+				}
+
+				select {
+				case c <- ijob:
+				case <- cancel:
+				}
+			}(job)
 		}
 	}
 
-	done := make(chan struct {})
-	cancel := make(chan struct {})
-	defer close(cancel)
+	for i := 0; i < n; i++ {
+		select {
+		case <- ctx.Done():
+			var v V
+			return v, ctx.Err()
+		case job, ok := <- c:
+			if !ok {
+				var v V
+				return v, ErrReceiverClosed
+			}
 
-	go func(){
-		// When all jobs are done, notify `wait()`
-		defer close(done)
-
-		for _, dd := range d {
-			select {
-			case <- cancel:
-				// When `FirstContext()` finish (with success or error),
-				// finish this goroutine, too.
-				return
-			case <- dd:
+			v, err := job.WaitContext(ctx)
+			if err == nil {
+				return v, nil
 			}
 		}
-	}()
+	}
 
-	return wait(ctx, c, done)
+	var v V
+	return v, ErrAlreadyConsumed
 }
 
 func MaybeAll[V any](jobs ...*Job[V]) []WithError[V] {
