@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
@@ -104,6 +105,10 @@ func TestShutdown(t *testing.T){
 			)
 			if err == nil {
 				t.Errorf("Must Fail")
+				return
+			}
+			if !errors.Is(err, ErrAlreadyShutdown) {
+				t.Errorf("Error must be `ErrAlreadyShutdown`: %v (%T)\n", err, err)
 				return
 			}
 		})
