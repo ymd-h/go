@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -51,6 +52,30 @@ func TestRun(t *testing.T) {
 		})
 	}
 
+}
+
+
+func TestWait(t *testing.T){
+	ctx, cancel := context.WithCancel(context.Background())
+	job := Run(func() struct{} {
+		<- ctx.Done()
+		return struct{}{}
+	})
+
+	ctxT, _ := context.WithTimeout(context.Background(), time.Duration(100))
+	_, errT := job.WaitContext(ctxT)
+	if errT == nil {
+		t.Errorf("Must Fail")
+		return
+	}
+
+	cancel()
+
+	_, err := job.Wait()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
 }
 
 
