@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"errors"
 )
 
 type (
@@ -11,14 +12,22 @@ type (
 
 	Worker struct {
 		send chan <- func()
+		done <- chan struct{}
 	}
+)
+
+var (
+	ErrAlreadyShutdown = errors.New("Worker has already been shut down")
 )
 
 func NewWorker(n uint) *Worker {
 	c := make(chan func())
+	done := make(chan struct{})
 
-	for i := uint(0); i < n; i++ {
-		go func(){
+	d := make([]chan struct{}, n)
+	for _, di := range d {
+		go func(dd chan <- struct{}){
+			defer close(dd)
 			for {
 				f, ok := <- c
 				if !ok {
@@ -26,26 +35,36 @@ func NewWorker(n uint) *Worker {
 				}
 				f()
 			}
-		}()
+		}(di)
 	}
+
+	go func(){
+		defer close(done)
+		for _, di := range d {
+			<- di
+		}
+	}()
 
 	return &Worker{
 		send: c,
+		done: done,
 	}
 }
 
 func NewLazyWorker(n uint) *Worker {
 	c := make(chan func())
 	sem := make(chan struct{}, n)
+	done := make(chan struct{})
 
 	go func(){
+		defer close(done)
 		for {
+			sem <- struct{}{}
 			f, ok := <- c
 			if !ok {
 				return
 			}
 
-			sem <- struct{}{}
 			go func(){
 				defer func(){ <-sem }()
 				f()
@@ -55,6 +74,7 @@ func NewLazyWorker(n uint) *Worker {
 
 	return &Worker{
 		send: c,
+		done: done,
 	}
 }
 
@@ -62,6 +82,8 @@ func (w *Worker) Send(ctx context.Context, f func()) error {
 	select {
 	case w.send <- f:
 		return nil
+	case <- w.done:
+		return ErrAlreadyShutdown
 	case <- ctx.Done():
 		return ctx.Err()
 	}
