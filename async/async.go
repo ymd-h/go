@@ -25,13 +25,6 @@ var (
 )
 
 
-func work[V any](f func() V, recv chan <- V, ready chan <- struct{}) {
-	defer close(ready)
-	defer close(recv)
-	recv <- f()
-}
-
-
 func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 	return func() WithError[V] {
 		v, err := f()
@@ -39,15 +32,26 @@ func WrapErrorFunc[V any](f func() (V, error)) (func() WithError[V]) {
 	}
 }
 
-
-func Run[V any](f func() V) *Job[V] {
+func newJob[V any](f func() V) (*Job[V], func()) {
 	recv := make(chan V, 1)
 	ready := make(chan struct{})
 	consumed := make(chan struct{})
 
-	go work(f, recv, ready)
+	job := Job[V]{ recv: recv, ready: ready, consumed: consumed }
+	work := func() {
+		defer close(ready)
+		defer close(recv)
+		recv <- f()
+	}
+	return &job, work
+}
 
-	return &Job[V]{ recv: recv, ready: ready, consumed: consumed }
+func Run[V any](f func() V) *Job[V] {
+	job, work := newJob(f)
+
+	go work()
+
+	return job
 }
 
 

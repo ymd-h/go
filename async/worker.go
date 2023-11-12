@@ -104,13 +104,11 @@ func (w *Worker) Send(ctx context.Context, f func()) error {
 
 
 func RunAtWorker[V any](ctx context.Context, w IWorker, f func() V) (*Job[V], error) {
-	recv := make(chan V, 1)
-	ready := make(chan struct{})
-	consumed := make(chan struct{})
+	job, work := newJob(f)
 
-	if err := w.Send(ctx, func(){ work(f, recv, ready) }); err != nil {
+	if err := w.Send(ctx, work); err != nil {
 		return nil, err
 	}
 
-	return &Job[V]{ recv: recv, ready: ready, consumed: consumed }, nil
+	return job, nil
 }
