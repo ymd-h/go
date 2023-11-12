@@ -65,8 +65,18 @@ func TestWait(t *testing.T){
 	ctxT, _ := context.WithTimeout(context.Background(), time.Duration(100))
 	_, errT := job.WaitContext(ctxT)
 	if errT == nil {
-		t.Errorf("Must Fail")
+		t.Errorf("Must Fail\n")
 		return
+	}
+
+	select {
+	case <- job.Ready():
+		t.Errorf("Must not be Ready\n")
+		return
+	case <- job.Consumed():
+		t.Errorf("Must not be Consumed\n")
+		return
+	default:
 	}
 
 	cancel()
@@ -74,6 +84,20 @@ func TestWait(t *testing.T){
 	_, err := job.Wait()
 	if err != nil {
 		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	select {
+	case <- job.Ready():
+	default:
+		t.Errorf("Must be Ready\n")
+		return
+	}
+
+	select {
+	case <- job.Consumed():
+	default:
+		t.Errorf("Must be Consumed\n")
 		return
 	}
 }
