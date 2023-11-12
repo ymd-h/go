@@ -83,6 +83,9 @@ func FirstContext[V any](ctx context.Context, jobs ...*Job[V]) (V, error) {
 
 	ctx, cause := context.WithCancelCause(ctx)
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	for _, job := range jobs {
 		select {
 		case <- ctx.Done():
