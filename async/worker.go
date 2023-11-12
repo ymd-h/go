@@ -20,24 +20,28 @@ var (
 	ErrAlreadyShutdown = errors.New("Worker has already been shut down")
 )
 
-func NewWorker(n uint) *Worker {
+func NewWorker(ctx context.Context, n uint) *Worker {
 	c := make(chan func())
-	done := make(chan struct{})
 
 	d := make([]chan struct{}, n)
 	for _, di := range d {
 		go func(dd chan <- struct{}){
 			defer close(dd)
 			for {
-				f, ok := <- c
-				if !ok {
+				select {
+				case f, ok := <- c:
+					if !ok {
+						return
+					}
+					f()
+				case <- ctx.Done():
 					return
 				}
-				f()
 			}
 		}(di)
 	}
 
+	done := make(chan struct{})
 	go func(){
 		defer close(done)
 		for _, di := range d {
@@ -51,7 +55,7 @@ func NewWorker(n uint) *Worker {
 	}
 }
 
-func NewLazyWorker(n uint) *Worker {
+func NewLazyWorker(ctx context.Context, n uint) *Worker {
 	c := make(chan func())
 	sem := make(chan struct{}, n)
 	done := make(chan struct{})
@@ -59,16 +63,25 @@ func NewLazyWorker(n uint) *Worker {
 	go func(){
 		defer close(done)
 		for {
-			sem <- struct{}{}
-			f, ok := <- c
-			if !ok {
+			select {
+			case sem <- struct{}{}:
+			case <- ctx.Done():
 				return
 			}
 
-			go func(){
-				defer func(){ <-sem }()
-				f()
-			}()
+			select {
+			case f, ok := <- c:
+				if !ok {
+					return
+				}
+
+				go func(){
+					defer func(){ <-sem }()
+					f()
+				}()
+			case <- ctx.Done():
+				return
+			}
 		}
 	}()
 
