@@ -23,7 +23,11 @@ var (
 func NewWorker(ctx context.Context, n uint) *Worker {
 	c := make(chan func())
 
-	d := make([]chan struct{}, n)
+	d := make([]chan struct{}, 0, n)
+	for i := uint(0); i < n; i++ {
+		d = append(d, make(chan struct{}))
+	}
+
 	for _, di := range d {
 		go func(dd chan <- struct{}){
 			defer close(dd)
