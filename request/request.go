@@ -73,7 +73,7 @@ func (c *Client) newHttpReqest(
 		return http.NewRequestWithContext(ctx, method, url, nil)
 	}
 
-	body, err = c.encoder.Encode(request)
+	body, err := c.encoder.Encode(request)
 	if err != nil {
 		return nil, err
 	}
