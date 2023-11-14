@@ -104,7 +104,7 @@ func (c *Client) FetchWithContext(
 	ctx context.Context,
 	method, url string,
 	request, response any,
-) (*Reponse, error) {
+) (*Response, error) {
 	s := fmt.Sprintf("%s at %s", method, url)
 
 	req, err := c.newHttpReqest(ctx, method, url, request)
