@@ -224,7 +224,7 @@ func Fetch(method, url string, request, response any) (*Response, error) {
 }
 
 func GetWithContext(ctx context.Context, url string, response any) (*Response, error) {
-	return DefaultClient.Get(ctx, url, response)
+	return DefaultClient.GetWithContext(ctx, url, response)
 }
 
 func Get(url string, response any) (*Response, error) {
