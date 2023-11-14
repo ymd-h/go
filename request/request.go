@@ -59,7 +59,7 @@ var (
 //
 // # Returns
 // * `*Client` - Created Client
-func NewClient(client IHttpClient, encoder BodyEncoder, decoder BodyDecoder) *Client {
+func NewClient(client IHttpClient, encoder IBodyEncoder, decoder IBodyDecoder) *Client {
 	return &Client{client: client, encoder: encoder, decoder: decoder}
 }
 
