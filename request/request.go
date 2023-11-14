@@ -184,7 +184,7 @@ func (c *Client) PutWithContext(
 }
 
 func (c *Client) Put(url string, request, response any) (*Response, error) {
-	return c.Put(context.Background(), url, request, response)
+	return c.PutWithContext(context.Background(), url, request, response)
 }
 
 func (c *Client) DeleteWitchContext(
