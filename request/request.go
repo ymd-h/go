@@ -59,7 +59,11 @@ var (
 //
 // # Returns
 // * `*Client` - Created Client
-func NewClient(client IHttpClient, encoder IBodyEncoder, decoder IBodyDecoder) *Client {
+func NewClient(
+	client IHttpClient,
+	encoder IBodyEncoder,
+	decoder IBodyDecoder,
+) *Client {
 	return &Client{client: client, encoder: encoder, decoder: decoder}
 }
 
@@ -223,7 +227,11 @@ func Fetch(method, url string, request, response any) (*Response, error) {
 	return FetchWithContext(context.Background(), method, url, request, response)
 }
 
-func GetWithContext(ctx context.Context, url string, response any) (*Response, error) {
+func GetWithContext(
+	ctx context.Context,
+	url string,
+	response any,
+) (*Response, error) {
 	return DefaultClient.GetWithContext(ctx, url, response)
 }
 
