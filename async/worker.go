@@ -6,10 +6,12 @@ import (
 )
 
 type (
+	// IWorker is a Worker interface
 	IWorker interface {
 		Send(context.Context, func()) error
 	}
 
+	// Worker is a job worker which might limit the number of goroutine
 	Worker struct {
 		send chan <- func()
 		done <- chan struct{}
@@ -20,6 +22,9 @@ var (
 	ErrAlreadyShutdown = errors.New("Worker has already been shut down")
 )
 
+// NewWorker creates new worker goroutines and returns a pointer to the new Worker.
+// The Context ctx is used to stop the Worker.
+// n is the number of goroutine to be prepared.
 func NewWorker(ctx context.Context, n uint) *Worker {
 	c := make(chan func())
 
@@ -59,6 +64,13 @@ func NewWorker(ctx context.Context, n uint) *Worker {
 	}
 }
 
+// NewLazyWorker creates helper goroutine and returns a pointer to the new Worker.
+// The helper goroutine will lazily create a worker goroutine
+// when the Worker receives a job request.
+// The worker goroutine will terminate after finishing the job.
+// (It is not necessary to consume the result.)
+// The Context ctx is used to stop the Worker.
+// The number of worker goroutine is limited by n.
 func NewLazyWorker(ctx context.Context, n uint) *Worker {
 	c := make(chan func())
 	sem := make(chan struct{}, n)
@@ -95,6 +107,14 @@ func NewLazyWorker(ctx context.Context, n uint) *Worker {
 	}
 }
 
+
+// Send sends the prepared job function to the Worker.
+// Worker might block and Context ctx can cancel it.
+// If the Worker has already been shutdown, ErrAlreadyShutdown is returned,
+// and if ctx is canceled, context.Cause(ctx) error, otherwise nil.
+//
+// This method is not intended to call directly, but to be used in RunAtWorker[V].
+// In order to implement custom worker class, Send is public method.
 func (w *Worker) Send(ctx context.Context, f func()) error {
 	select {
 	case w.send <- f:
@@ -107,6 +127,11 @@ func (w *Worker) Send(ctx context.Context, f func()) error {
 }
 
 
+// RunAtWorker[V] executes function f at IWorker w asynchronously,
+// and returns a pointer to the new Job[V].
+// Context ctx is used to cancel sending the job to the worker,
+// it doesn't affect the worker or the job.
+// If w.Send returns error, the error is returned.
 func RunAtWorker[V any](ctx context.Context, w IWorker, f func() V) (*Job[V], error) {
 	job, work := newJob(f)
 
