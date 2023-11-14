@@ -23,7 +23,7 @@ type (
 )
 
 
-func (i DispatchItem[T]) StatusCode() {
+func (i DispatchItem[T]) StatusCode() int {
 	return i.Code
 }
 
