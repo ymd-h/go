@@ -42,7 +42,7 @@ type (
 	}
 )
 
-const (
+var (
 	// Default Client
 	DefaultClient = &Client{
 		client: http.DefaultClient,
