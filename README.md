@@ -14,6 +14,7 @@ The main purposes are followings;
 
 | Name                           | Version |
 |--------------------------------|---------|
+| github.com/ymd-h/go/async      | v1.0.0  |
 | github.com/ymd-h/go/maps       | v1.0.0  |
 | github.com/ymd-h/go/slices     | N/A     |
 | github.com/ymd-h/go/sets       | v1.0.0  |
