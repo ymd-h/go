@@ -13,9 +13,9 @@ type (
 
 
 func (_ Encoder) Encode(body any) (*bytes.Buffer, error) {
-	return xml.Encoder().Encode(body)
+	return xml.Encoder{}.Encode(body)
 }
 
 func (_ Encoder) ContentType() string {
-	return 'application/xml: charset="UTF-8"'
+	return `application/xml: charset="UTF-8"`
 }
