@@ -13,7 +13,7 @@ type (
 
 
 func (_ Encoder) Encode(body any) (*bytes.Buffer, error) {
-	return gob.Encoder().Encode(body)
+	return gob.Encoder{}.Encode(body)
 }
 
 func (_ Encoder) ContentType() string {
