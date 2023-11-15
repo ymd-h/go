@@ -130,13 +130,17 @@ func (c *Client) FetchWithContext(
 	if rd, ok := response.(*ResponseDispatcher); ok {
 		response, err = rd.Dispatch(ret.StatusCode)
 		if err != nil {
-			return ret, fmt.Errorf("Fail to Dispatch Response for %s: %w", s, err)
+			return ret, fmt.Errorf(
+				"Fail to Dispatch Response (StatusCode: %d) for %s: %w",
+				ret.StatusCode, s, err)
 		}
 	}
 
 	err = c.decoder.Decode(res.Body, response)
 	if err != nil {
-		return ret, fmt.Errorf("Fail to Decode Response for %s: %w", s, err)
+		return ret, fmt.Errorf(
+			"Fail to Decode Response (StatucCode: %d) for %s: %w",
+			ret.StatusCode, s, err)
 	}
 
 	ret.Body = response
