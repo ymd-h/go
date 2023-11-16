@@ -58,6 +58,17 @@ func TestRequest(t *testing.T){
 		<- req.Context().Done()
 		return
 	})
+	http.HandleFunc("/status", func(w http.ResponseWriter, req *http.Request){
+		var sc int
+		err := json.NewDecoder(req.Body).Decode(&sc)
+		if err != nil {
+			return
+		}
+		w.WriteHeader(sc)
+
+		w.Write([]byte("{}"))
+		return
+	})
 
 	go http.ListenAndServe("localhost:8888", nil)
 
@@ -252,6 +263,56 @@ func TestRequest(t *testing.T){
 
 		if v.Error == nil {
 			t.Errorf("Must Fail\n")
+			return
+		}
+	})
+
+	t.Run("dispatch", func(*testing.T){
+		type (
+			AA struct {}
+			BB struct {}
+			CC struct {}
+		)
+
+		d := NewResponseDispatcher(
+			DispatchItem[AA]{http.StatusOK},
+			DispatchItem[BB]{http.StatusNotFound},
+			DispatchItem[CC]{http.StatusTeapot},
+		)
+
+		resp, err := Post(url("status"), http.StatusOK, d)
+		if err != nil {
+			t.Errorf("Fail: %v\n", err)
+			return
+		}
+		if _, ok := resp.Body.(*AA); !ok {
+			t.Errorf("Fail: %T\n", resp.Body)
+			return
+		}
+
+		resp, err = Post(url("status"), http.StatusNotFound, d)
+		if err != nil {
+			t.Errorf("Fail: %v\n", err)
+			return
+		}
+		if _, ok := resp.Body.(*BB); !ok {
+			t.Errorf("Fail: %T\n", resp.Body)
+			return
+		}
+
+		resp, err = Post(url("status"), http.StatusTeapot, d)
+		if err != nil {
+			t.Errorf("Fail: %v\n", err)
+			return
+		}
+		if _, ok := resp.Body.(*CC); !ok {
+			t.Errorf("Fail: %T\n", resp.Body)
+			return
+		}
+
+		_, err = Post(url("status"), http.StatusAccepted, d)
+		if err == nil {
+			t.Errorf("Must Fail")
 			return
 		}
 	})
