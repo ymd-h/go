@@ -2,7 +2,6 @@
 package request
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -19,7 +18,7 @@ type (
 
 	// Interface for Request Body Encoder
 	IBodyEncoder interface {
-		Encode(any) (*bytes.Buffer, error)
+		Encode(any) (io.Reader, error)
 		ContentType() string
 	}
 
