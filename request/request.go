@@ -43,11 +43,11 @@ type (
 
 var (
 	// Default Client
-	DefaultClient = &Client{
-		client: http.DefaultClient,
-		encoder: json.Encoder{},
-		decoder: json.Decoder{},
-	}
+	DefaultClient = NewClient(
+		http.DefaultClient,
+		json.Encoder{},
+		json.Decoder{},
+	)
 )
 
 
