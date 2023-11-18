@@ -27,7 +27,7 @@ func Encode[E IEncoder](newEncoder func(io.Writer) E, data any) (io.Reader, erro
 
 	err := newEncoder(buf).Encode(data)
 	if err != nil {
-		return nil, fmt.Errorf("Fail to Encode: %w\n", err)
+		return nil, fmt.Errorf("Fail to Encode: %w", err)
 	}
 
 	return buf, nil
@@ -41,7 +41,7 @@ func Decode[D IDecoder](newDecoder func(io.Reader) D, buf io.Reader, ptr any) er
 
 	err := newDecoder(buf).Decode(ptr)
 	if err != nil {
-		return fmt.Errorf("Fail to Decode: %w\n", err)
+		return fmt.Errorf("Fail to Decode: %w", err)
 	}
 
 	return nil
