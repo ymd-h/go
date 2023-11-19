@@ -11,6 +11,5 @@ use (
 	./slices
 	./testing
 	./uuid
-	./workerpool
 	./worktidy
 )
