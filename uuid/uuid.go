@@ -316,3 +316,37 @@ func (u *UUIDv4) UnmarshalBinary(data []byte) error {
 func NewUUIDv7() *UUIDv7 {
 	return NewConfig().UUIDv7()
 }
+
+func (u *UUIDv7) UnmarshalText(test []byte) error {
+	var uuid UUID
+
+	err := uuid.UnmarshalText(text)
+	if err != nil {
+		return err
+	}
+
+	u7, err := uuid.TryUUIDv7()
+	if err != nil {
+		return err
+	}
+
+	u.b = u7.b
+	return nil
+}
+
+func (u *UUIDv7) UnmarshalBinary(data []byte) error {
+	var uuid UUID
+
+	err := uuid.UnmarshalBinary(data)
+	if err != nil {
+		return err
+	}
+
+	u7, err := uuid.TryUUIDv7()
+	if err != nil {
+		return err
+	}
+
+	u.b = u7.b
+	return nil
+}
