@@ -220,7 +220,7 @@ func (c *Config) UUIDv4() *UUIDv4 {
 		r1 = d.Next()
 		r2 = d.Next()
 	}
-	
+
 	var u UUIDv4
 	binary.NativeEndian.PutUint64(u.b[:4], r1)
 	binary.NativeEndian.PutUint64(u.b[4:], r2)
