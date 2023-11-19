@@ -28,13 +28,11 @@ func New[T any](ctx context.Context) (chan <- T, <- chan T) {
 
 		LOOP:
 		for {
-			var v T
-			var ok bool
 			if len(queue) == 0 {
-				switch {
+				select {
 				case <- ctx.Done():
 					return
-				case v, ok = <- in:
+				case v, ok := <- in:
 					if !ok {
 						// `in` is closed
 						// No cleanup is needed
@@ -44,10 +42,10 @@ func New[T any](ctx context.Context) (chan <- T, <- chan T) {
 				}
 			}
 
-			switch {
+			select {
 			case <- ctx.Done():
 				break LOOP
-			case v, ok = <- in:
+			case v, ok := <- in:
 				if ok {
 					queue = append(queue, v)
 				} else {
