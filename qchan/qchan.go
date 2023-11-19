@@ -1,4 +1,4 @@
-// Package qchan provides queue based infinit length channel
+// Package qchan provides queue based infinite length channel.
 package qchan
 
 import (
@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	// Queue[T] is a queue based infinif length channel.
+	// Queue[T] is a queue based infinite length channel.
 	Queue[T any] struct {
 		in chan <- T
 		out <- chan T
@@ -21,7 +21,7 @@ var (
 	ErrUnknown = errors.New("Finish with unknown reason")
 )
 
-// New[T] creates a new Queue[T] and returns a point to it.
+// New[T] creates a new Queue[T] and returns a pointer to it.
 func New[T any]() *Queue[T] {
 	return NewWithContext[T](context.Background())
 }
@@ -103,7 +103,7 @@ func (q *Queue[T]) Done() <- chan struct{} {
 	return q.ctx.Done()
 }
 
-// Error returns error explaining cancell reason.
+// Error returns error explaining cancel reason.
 func (q *Queue[T]) Error() error {
 	return context.Cause(q.ctx)
 }
