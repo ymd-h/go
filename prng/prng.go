@@ -1,7 +1,6 @@
 package prng
 
 import (
-	"encoding/binary"
 	"math"
 )
 
@@ -36,35 +35,27 @@ type (
 		g IPRNG64
 	}
 
-	ISplittable32 interface {
-		IRandom32
-		Copy() ISplittable32
+	ISplittable[T any] interface {
+		Copy() T
 		Jump()
 	}
-
-	ISplittable64 interface {
-		IRandom64
-		Copy() ISplittable64
-		Jump()
-	}
-
 )
 
 func Low32(g IPRNG64) *prng32on64 {
 	return &prng32on64{g: g}
 }
 
-func (p *PRNG32on64) Next() uint32 {
+func (p *prng32on64) Next() uint32 {
 	return uint32(p.Next() >> 32)
 }
 
 
 func NewRandom32(g IPRNG32) *random32 {
-	return &Random32{g: g}
+	return &random32{g: g}
 }
 
 func NewRandom64(g IPRNG64) *random64 {
-	return &Random64{g: g}
+	return &random64{g: g}
 }
 
 func (p *random32) Uint32() uint32 {
@@ -87,7 +78,7 @@ func (p *random64) Float64() float64 {
 	return f - 1.0
 }
 
-func Split[T interface {ISplittable32 | ISplittable64}](r T) T {
+func Split[T ISplittable[T]](r T) T {
 	c := r.Copy()
 	c.Jump()
 	return c
