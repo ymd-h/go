@@ -5,7 +5,7 @@ use (
 	./encoding
 	./maps
 	./prng
-	./queuechan
+	./qchan
 	./request
 	./sets
 	./slices

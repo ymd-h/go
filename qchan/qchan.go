@@ -1,7 +1,7 @@
 // queuechan package
 //
 // Queue based infinite length channel
-package queuechan
+package qchan
 
 import (
 	"context"
