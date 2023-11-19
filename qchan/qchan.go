@@ -103,7 +103,7 @@ func (q *Queue[T]) Done() <- chan struct{} {
 	return q.ctx.Done()
 }
 
-// Cause returns error explaining cancell reason.
-func (q *Queue[T]) Cause() error {
+// Error returns error explaining cancell reason.
+func (q *Queue[T]) Error() error {
 	return context.Cause(q.ctx)
 }
