@@ -3,6 +3,7 @@ package qchan
 
 import (
 	"context"
+	"errors"
 )
 
 type (
@@ -10,21 +11,32 @@ type (
 	Queue[T any] struct {
 		in chan <- T
 		out <- chan T
-		done <- chan struct{}
+		ctx context.Context
 	}
 )
 
-// New[T] creates new Queue[T] and returns a pointer to it.
+
+var (
+	ErrInputClosed = errors.New("Input channel has aleady been closed.")
+	ErrUnknown = errors.New("Finish with unknown reason")
+)
+
+// New[T] creates a new Queue[T] and returns a point to it.
+func New[T any]() *Queue[T] {
+	return NewWithContext(context.Background())
+}
+
+// NewWithContext[T] creates a new Queue[T] and returns a pointer to it.
 // If ctx is cancelled, Queue[T] will not consumed input channel,
 // and the input channel will be blocked, however,
 // remained values still will be put into output channel.
-func New[T any](ctx context.Context) *Queue[T] {
+func NewWithContext[T any](ctx context.Context) *Queue[T] {
 	in := make(chan T, 0)
 	out := make(chan T, 0)
-	done, cancel := context.WithCancel(context.Background())
+	ctx, cause := context.WithCancelCause(ctx)
 
 	go func(in <- chan T, out chan <- T){
-		defer cancel()
+		defer cause(ErrUnknown)
 		defer close(out)
 		queue := make([]T, 0)
 
@@ -38,6 +50,7 @@ func New[T any](ctx context.Context) *Queue[T] {
 					if !ok {
 						// `in` is closed
 						// No cleanup is needed
+						cause(ErrInputClosed)
 						return
 					}
 					queue = append(queue, v)
@@ -53,6 +66,7 @@ func New[T any](ctx context.Context) *Queue[T] {
 				} else {
 					// `in` is closed
 					// Go to cleanup
+					cause(ErrInputClosed)
 					break LOOP
 				}
 			case out <- queue[0]:
@@ -60,8 +74,8 @@ func New[T any](ctx context.Context) *Queue[T] {
 			}
 		}
 
-		// Cancel since Queue[T] will not consume input channel any more.
-		cancel()
+		// ctx shoule have already been cancelled, however, we ensure canncel it.
+		cause(ErrUnknown)
 
 		// Clean up
 		for len(queue) > 0 {
@@ -86,5 +100,10 @@ func (q *Queue[T]) Out() <- chan T {
 // Done returns done channel, which will be closed
 // when Queue[T] stops consuming its input channel.
 func (q *Queue[T]) Done() <- chan struct{} {
-	return q.done
+	return q.ctx.Done()
+}
+
+// Cause returns error explaining cancell reason.
+func (q *Queue[T]) Cause() error {
+	return context.Cause(q.ctx)
 }
