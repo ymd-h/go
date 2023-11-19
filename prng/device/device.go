@@ -1,7 +1,7 @@
 package device
 
 import (
-	"crypt/rand"
+	"crypto/rand"
 	"math/big"
 )
 
