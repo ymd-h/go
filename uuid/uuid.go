@@ -1,46 +1,29 @@
 package uuid
 
 import (
-	"encoding/binary"
 	"fmt"
-	"time"
-
-	"github.com/ymd-h/go/prng"
-	"github.com/ymd-h/go/prng/device"
 )
 
 type(
-	UUID struct {
+	baseUUID struct {
 		b [16]byte
 	}
 
-	UUIDv4 UUID
-	UUIDv7 UUID
-
-	ITimestamp interface {
-		Now() int64
+	UUID struct {
+		baseUUID
 	}
 
-	Config struct {
-		t ITimestamp
-		r32 prng.IPRNG32
-		r64 prng.IPRNG64
+	UUIDv4 struct {
+		baseUUID
+	}
+
+	UUIDv7 struct {
+		baseUUID
 	}
 )
 
-func FromString(s string) (*UUID, error) {
-	var u UUID
-	p := &u
 
-	err := p.UnmarshalText([]byte(s))
-	if err != nil {
-		return nil, err
-	}
-
-	return p, nil
-}
-
-func (u *UUID) String() string {
+func (u *baseUUID) String() string {
 	return fmt.Sprintf(
 		"%02x%02x%02x%02x-" +
 			"%02x%02x-" +
@@ -55,53 +38,36 @@ func (u *UUID) String() string {
 	)
 }
 
-func (u *UUID) Bytes() []byte {
+func (u *baseUUID) Bytes() []byte {
 	b := make([]byte, 0, len(u.b))
 	return append(b, u.b[:]...)
 }
 
-func (u *UUID) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, u.String())), nil
+func (u *baseUUID) MarshalText() ([]byte, error) {
+	return []byte(u.String()), nil
 }
 
-func h2b(b byte) (byte, error) {
-	switch  {
-	case (0x30 <= b) && (b <= 0x39):
-		//   0 -    9
-		//0x30 - 0x39
-		return b - 0x30, nil
-	case (0x41 <= b) && (b <= 0x46):
-		//    A -    F
-		// 0x41 - 0x46
-		return b - 0x41 + 0xA, nil
-	case (0x61 <= b) && (b <= 0x66):
-		//    a -    f
-		// 0x61 - 0x66
-		return b - 0x61 + 0xA, nil
-	default:
-		return 0xFF, fmt.Errorf("Invalid byte: %v", b)
-	}
+func (u *baseUUID) MarshalBinary() ([]byte, error) {
+	return u.Bytes(), nil
 }
 
-func decodeHEX(b []byte) (byte, error) {
-	bu, err := h2b(b[0])
-	if err != nil {
-		return 0, err
-	}
-
-	bl, err := h2b(b[1])
-	if err != nil {
-		return 0, err
-	}
-
-	return (bu << 4) | bl, nil
+func (u *baseUUID) Version() uint8 {
+	return uint8(u.b[6] >> 4)
 }
 
-func isHyphen(b byte) bool {
-	return b == 0x2d
+func (u *baseUUID) Variant() uint8 {
+	return uint8(u.b[8] >> 6)
 }
 
-func (u *UUID) UnmarshalText(data []byte) error {
+func (u *baseUUID) setVersion(v uint8) {
+	u.b[6] = (u.b[6] & 0x0F) | (byte(v) << 4)
+}
+
+func (u *baseUUID) setVariant(v uint8) {
+	u.b[8] = (u.b[8] & 0b00111111) | (byte(v) << 6)
+}
+
+func (u *baseUUID) unmarshalText(data []byte) error {
 	n := len(data)
 	if n > 2 {
 		f := data[0]
@@ -138,11 +104,7 @@ func (u *UUID) UnmarshalText(data []byte) error {
 	return nil
 }
 
-func (u *UUID) MarshalBinary() ([]byte, error) {
-	return u.Bytes(), nil
-}
-
-func (u *UUID) UnmarshalBinary(data []byte) error {
+func (u *baseUUID) unmarshalBinary(data []byte) error {
 	if len(data) != 16 {
 		return fmt.Errorf("UUID UnmarshalBinary: Wrong Byte Length: %d", len(data))
 	}
@@ -154,199 +116,87 @@ func (u *UUID) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+func (u *UUID) UnmarshalText(text []byte) error {
+	return u.unmarshalText(text)
+}
+
+func (u *UUID) UnmarshalBinary(data []byte) error {
+	return u.unmarshalBinary(data)
+}
 
 func (u *UUID) TryUUIDv4() (*UUIDv4, error) {
-	version := u.b[6] >> 4
-	if version != 4 {
-		return nil, fmt.Errorf("Version is not 4: %d", version)
+	u4 := &UUIDv4{ u.baseUUID }
+
+	err := u4.validate()
+	if err != nil {
+		return nil, err
 	}
 
-	variant := u.b[8] >> 6
-	if variant != 8 {
-		return nil, fmt.Errorf("Variant is not 0x10: %d", variant)
-	}
-
-	return &UUIDv4{ b: u.b }, nil
+	return u4, nil
 }
 
 func (u *UUID) TryUUIDv7() (*UUIDv7, error) {
-	version := u.b[6] >> 4
-	if version != 7 {
-		return nil, fmt.Errorf("Version is not 7: %d", version)
+	u7 := &UUIDv7{ u.baseUUID }
+
+	err := u7.validate()
+	if err != nil {
+		return nil, err
 	}
 
-	variant := u.b[8] >> 6
-	if variant != 8 {
-		return nil, fmt.Errorf("Variant is not 0x10: %d", variant)
-	}
-
-	return &UUIDv7{ b: u.b }, nil
-}
-
-func NewConfig(options ...any) (*Config, error) {
-	c := Config{
-		t: nil,
-		r32: nil,
-		r64: nil,
-	}
-
-	for _, o := range options {
-		switch {
-		case v, ok := o.(ITimestamp); ok:
-			c.t = v
-		case v, ok := o.(prng.IPRNG32); ok:
-			c.r32 = v
-		case v, ok := o.(prng.IPRNG64); ok:
-			c.r64 = v
-		default:
-			return nil, fmt.Errorf("Unknown Option: %T", o)
-		}
-	}
-
-	return &c, nil
-}
-
-func (c *Config) UUIDv4() *UUIDv4 {
-	var r1, r2 uint64
-	switch {
-	case c.r64 != nil:
-		r1 = c.r64.Next()
-		r2 = c.r64.Next()
-	case c.r32 != nil:
-		r1 = (uint64(c.r32.Next()) << 32) | uint64(c.r32.Next())
-		r2 = (uint64(c.r32.Next()) << 32) | uint64(c.r32.Next())
-	default:
-		d := device.Device64{}
-		r1 = d.Next()
-		r2 = d.Next()
-	}
-
-	var u UUIDv4
-	binary.NativeEndian.PutUint64(u.b[:4], r1)
-	binary.NativeEndian.PutUint64(u.b[4:], r2)
-
-	var version byte = 0b0100
-	var variant byte = 0b10
-	u.b[6] = (u.b[6] & 0x0F) | (version << 4)
-	u.b[8] = (u.b[8] & 0b00111111) | (variant << 6)
-
-	return &u
-}
-
-func (c *Config) UUIDv7() *UUIDv7 {
-	var unix_ms int64
-	if c.t != nil {
-		unix_ms = c.t.Now()
-	} else {
-		unix_ms = time.Now().UnixMilli()
-	}
-
-	var r1 uint16
-	var r2 uint64
-
-	switch {
-	case (c.r64 == nil) && (c.r32 == nil):
-		r1 = uint16(device.Device32{}.Next())
-		r2 = device.Device64{}.Next()
-	case (c.r64 != nil) && (c.r32 != nil):
-		r1 = uint16(c.r32.Next())
-		r2 = c.r64.Next()
-	case c.r64 != nil:
-		r1 = uint16(c.r64.Next())
-		r2 = c.r64.Next()
-	case c.r32 != nil:
-		r1 = uint16(c.r32.Next())
-		r2 = (uint64(c.r.32.Next()) << 32) | uint64(c.r.32.Next())
-	default:
-		panic("Never")
-	}
-
-	var u UUIDv7
-	binary.BigEndian.PutUint16(u.b[:2], uint16(unix_ms >> 32))
-	binary.BigEndian.PutUint32(u.b[2:6], uint32(unix_ms && 0xFFFFFFFF))
-	binary.NativeEndian.PutUint16(u.b[6:8], r1)
-	binary.NativeEndian.PutUint64(u.b[8:], r2)
-
-	var version byte = 0b0100
-	var variant byte = 0b10
-	u.b[6] = (u.b[6] & 0x0F) | (version << 4)
-	u.b[8] = (u.b[8] & 0b00111111) | (variant << 6)
-
-	return &u
-}
-
-func NewUUIDv4() *UUIDv4 {
-	return NewConfig().UUIDv4()
+	return u7, nil
 }
 
 func (u *UUIDv4) UnmarshalText(text []byte) error {
-	var uuid UUID
-
-	err := uuid.UnmarshalText(text)
-	if err != nil {
-		return err
-	}
-
-	u4, err := uuid.TryUUIDv4()
-	if err != nil {
-		return err
-	}
-
-	u.b = u4.b
-	return nil
+	return unmarshal(&tUUID{u}, text)
 }
 
 func (u *UUIDv4) UnmarshalBinary(data []byte) error {
-	var uuid UUID
+	return unmarshal(&bUUID{u}, data)
+}
 
-	err := uuid.UnmarshalBinary(data)
-	if err != nil {
-		return err
+func (u *UUIDv4) validate() error {
+	version := u.Version()
+	if version != 4 {
+		return fmt.Errorf("Version is not 4: %d", version)
 	}
 
-	u4, err := uuid.TryUUIDv4()
-	if err != nil {
-		return err
+	variant := u.Variant()
+	if variant != 8 {
+		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
 
-	u.b = u4.b
 	return nil
 }
 
-func NewUUIDv7() *UUIDv7 {
-	return NewConfig().UUIDv7()
-}
-
-func (u *UUIDv7) UnmarshalText(test []byte) error {
-	var uuid UUID
-
-	err := uuid.UnmarshalText(text)
-	if err != nil {
-		return err
-	}
-
-	u7, err := uuid.TryUUIDv7()
-	if err != nil {
-		return err
-	}
-
-	u.b = u7.b
-	return nil
+func (u *UUIDv7) UnmarshalText(text []byte) error {
+	return unmarshal(&tUUID{u}, text)
 }
 
 func (u *UUIDv7) UnmarshalBinary(data []byte) error {
-	var uuid UUID
+	return unmarshal(&bUUID{u}, data)
+}
 
-	err := uuid.UnmarshalBinary(data)
-	if err != nil {
-		return err
+func (u *UUIDv7) validate() error {
+	version := u.Version()
+	if version != 7 {
+		return fmt.Errorf("Version is not 7: %d", version)
 	}
 
-	u7, err := uuid.TryUUIDv7()
-	if err != nil {
-		return err
+	variant := u.Variant()
+	if variant != 8 {
+		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
 
-	u.b = u7.b
 	return nil
+}
+
+func FromString(s string) (*UUID, error) {
+	var u UUID
+
+	err := u.UnmarshalText([]byte(s))
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
 }

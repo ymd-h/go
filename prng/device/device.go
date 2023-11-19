@@ -2,7 +2,7 @@ package device
 
 import (
 	"crypto/rand"
-	"math/big"
+	"encoding/binary"
 )
 
 type (
