@@ -2,6 +2,7 @@ package qchan
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
@@ -43,6 +44,11 @@ func TestQueue(t *testing.T){
 	<- q.Done()
 	_, ok := <- q.Out()
 	if ok {
+		t.Errorf("Fail\n")
+		return
+	}
+
+	if !errors.Is(q.Error(), ErrInputClosed) {
 		t.Errorf("Fail\n")
 		return
 	}
