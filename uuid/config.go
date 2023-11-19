@@ -66,7 +66,7 @@ func (c *Config) UUIDv4() (*UUIDv4, error) {
 	var u UUIDv4
 	err := c.r.FillRandom(u.b[:])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("UUIDv4: Fail to Fill Random: %w", err)
 	}
 
 	u.setVersion(0b0100)
@@ -84,7 +84,7 @@ func (c *Config) UUIDv7() (*UUIDv7, error) {
 
 	err := c.r.FillRandom(u.b[6:])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("UUIDv7: Fail to Fill Random: %w", err)
 	}
 
 	u.setVersion(0b0100)
