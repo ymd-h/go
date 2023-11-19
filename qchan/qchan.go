@@ -23,7 +23,7 @@ var (
 
 // New[T] creates a new Queue[T] and returns a point to it.
 func New[T any]() *Queue[T] {
-	return NewWithContext(context.Background())
+	return NewWithContext[T](context.Background())
 }
 
 // NewWithContext[T] creates a new Queue[T] and returns a pointer to it.
@@ -84,7 +84,7 @@ func NewWithContext[T any](ctx context.Context) *Queue[T] {
 		}
 	}(in, out)
 
-	return &Queue{ in: in, out: out, done: done.Done() }
+	return &Queue[T]{ in: in, out: out, ctx: ctx }
 }
 
 // In returns input channel.
