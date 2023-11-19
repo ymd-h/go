@@ -1,28 +1,30 @@
-// queuechan package
-//
-// Queue based infinite length channel
+// Package qchan provides queue based infinit length channel
 package qchan
 
 import (
 	"context"
 )
 
-// Create new channel set
-//
-// # Arguments
-// * `ctx`: `context.Context` - Context to stop Queue Channnel
-//
-// # Returns
-// * `in`: `chan <- T` - Input channel to Queue
-// * `out`: `<- chan T` - Output channel from Queue
-//
-// # Context
-// * `Done()` -> Don't take out from `in` any more, but do put to `in` for cleanup.
-func New[T any](ctx context.Context) (chan <- T, <- chan T) {
+type (
+	// Queue[T] is a queue based infinif length channel.
+	Queue[T any] struct {
+		in chan <- T
+		out <- chan T
+		done <- chan struct{}
+	}
+)
+
+// New[T] creates new Queue[T] and returns a pointer to it.
+// If ctx is cancelled, Queue[T] will not consumed input channel,
+// and the input channel will be blocked, however,
+// remained values still will be put into output channel.
+func New[T any](ctx context.Context) *Queue[T] {
 	in := make(chan T, 0)
 	out := make(chan T, 0)
+	done, cancel := context.WithCancel(context.Background())
 
 	go func(in <- chan T, out chan <- T){
+		defer cancel()
 		defer close(out)
 		queue := make([]T, 0)
 
@@ -58,6 +60,9 @@ func New[T any](ctx context.Context) (chan <- T, <- chan T) {
 			}
 		}
 
+		// Cancel since Queue[T] will not consume input channel any more.
+		cancel()
+
 		// Clean up
 		for len(queue) > 0 {
 			out <- queue[0]
@@ -65,5 +70,21 @@ func New[T any](ctx context.Context) (chan <- T, <- chan T) {
 		}
 	}(in, out)
 
-	return in, out
+	return &Queue{ in: in, out: out, done: done.Done() }
+}
+
+// In returns input channel.
+func (q *Queue[T]) In() chan <- T {
+	return q.in
+}
+
+// Out returns output channel.
+func (q *Queue[T]) Out() <- chan T {
+	return q.out
+}
+
+// Done returns done channel, which will be closed
+// when Queue[T] stops consuming its input channel.
+func (q *Queue[T]) Done() <- chan struct{} {
+	return q.done
 }
