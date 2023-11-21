@@ -14,11 +14,19 @@ type (
 
 	defaultTimestamp struct {}
 
+	timestampFunc struct {
+		f func() int64
+	}
+
 	IRandom interface {
 		FillRandom([]byte) error
 	}
 
 	defaultRandom struct {}
+
+	randomFunc struct {
+		f func([]byte) error
+	}
 
 	Config struct {
 		t ITimestamp
@@ -31,9 +39,25 @@ func (_ defaultTimestamp) UnixMilli() int64 {
 	return time.Now().UnixMilli()
 }
 
+func TimestampFrom(f func() int64) *timestampFunc {
+	return &timestampFunc{ f: f }
+}
+
+func (t *timestampFunc) UnixMilli() int64 {
+	return t.f()
+}
+
 func (_ defaultRandom) FillRandom(b []byte) error {
 	_, err := rand.Read(b)
 	return err
+}
+
+func RandomFrom(f func([]byte) error) *randomFunc {
+	return &randomFunc{ f: f }
+}
+
+func (r *randomFunc) FillRandom(b []byte) error {
+	return r.f(b)
 }
 
 func NewConfig(options ...any) (*Config, error) {
