@@ -124,7 +124,7 @@ func (c *Config) UUIDv7() (*UUIDv7, error) {
 		return nil, fmt.Errorf("UUIDv7: Fail to Fill Random: %w", err)
 	}
 
-	u.setVersion(0b0100)
+	u.setVersion(0b0111)
 	u.setVariant(0b10)
 
 	return &u, nil
