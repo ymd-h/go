@@ -161,7 +161,7 @@ func (u *UUIDv4) validate() error {
 	}
 
 	variant := u.Variant()
-	if variant != 8 {
+	if variant != 0b10 {
 		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
 
@@ -183,7 +183,7 @@ func (u *UUIDv7) validate() error {
 	}
 
 	variant := u.Variant()
-	if variant != 8 {
+	if variant != 0b10 {
 		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
 
