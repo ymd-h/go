@@ -3,6 +3,7 @@ package uuid
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -32,6 +33,11 @@ type (
 		t ITimestamp
 		r IRandom
 	}
+)
+
+var (
+	ErrTimestampAlreadySet = errors.New("Timestamp has already been set.")
+	ErrRandomAlreadySet = errors.New("Random has already been set.")
 )
 
 
@@ -68,8 +74,15 @@ func NewConfig(options ...any) (*Config, error) {
 
 	for _, o := range options {
 		if t, ok := o.(ITimestamp); ok {
+			if c.t != nil {
+				return nil, ErrTimestampAlreadySet
+			}
+
 			c.t = t
 		} else if r, ok := o.(IRandom); ok {
+			if c.r != nil {
+				return nil, ErrRandomAlreadySet
+			}
 			c.r = r
 		} else {
 			return nil, fmt.Errorf("Unknown Option: %T", o)
