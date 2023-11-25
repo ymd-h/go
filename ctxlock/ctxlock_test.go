@@ -151,5 +151,14 @@ func TestUnlock(t *testing.T){
 		t.Errorf("Fail: %v\n", err)
 		return
 	}
+
+	ctx, _ = newTimeout(time.Duration(100000000))
+	unlock.UnlockOnCancel(ctx)
+
+	unlock, err = L.Lock(context.Background())
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
 	unlock()
 }
