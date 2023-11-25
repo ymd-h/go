@@ -33,6 +33,13 @@ func NewLock() *Lock {
 // Lock tries to lock and returns unlock function when it succeed.
 // If ctx is canceled, lock is canceled and context.Cause(ctx) error is returned.
 func (L *Lock) Lock(ctx context.Context) (UnlockFunc, error) {
+	// If ctx has already been canceled, we don't try to lock at all.
+	select {
+	case <- ctx.Done():
+		return nil, context.Cause(ctx)
+	default:
+	}
+
 	select {
 	case L.write <- struct{}{}:
 		return L.unlockFunc(), nil
@@ -92,6 +99,13 @@ func (L *SharableLock) doneFunc() UnlockFunc {
 // SharedLock tries to lock for reader and returns unlock function when it succeed.
 // If ctx is canceled, lock is canceled and context.Cause(ctx) error is returned.
 func (L *SharableLock) SharedLock(ctx context.Context) (UnlockFunc, error) {
+	// If ctx has already been canceled, we don't try to lock at all.
+	select {
+	case <- ctx.Done():
+		return nil, context.Cause(ctx)
+	default:
+	}
+
 	// Check want can lock.
 	wunlock, err := L.want.Lock(ctx)
 	if err != nil {
