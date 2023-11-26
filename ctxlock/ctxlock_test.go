@@ -269,7 +269,28 @@ func BenchmarkCtxLockContextSwitch(b *testing.B){
 	wg.Wait()
 }
 
-func BenchmarkRWMutex(b *testing.B){
+func BenchmarkRWMutexExclusive(b *testing.B){
+	var mu sync.RWMutex
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		mu.Lock()
+		mu.Unlock()
+	}
+}
+
+func BenchmarkCtxSharableLockExclusive(b *testing.B){
+	L := NewSharableLock()
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		unlock, _ := L.ExclusiveLock(ctx)
+		unlock()
+	}
+}
+
+func BenchmarkRWMutexShared(b *testing.B){
 	var mu sync.RWMutex
 
 	b.ResetTimer()
@@ -278,7 +299,7 @@ func BenchmarkRWMutex(b *testing.B){
 	}
 }
 
-func BenchmarkCtxSharableLock(b *testing.B){
+func BenchmarkCtxSharableLockShared(b *testing.B){
 	L := NewSharableLock()
 	ctx := context.Background()
 
