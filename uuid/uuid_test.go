@@ -1,6 +1,7 @@
 package uuid
 
 import (
+	"fmt"
 	"testing"
 
 	y "github.com/ymd-h/go/testing"
@@ -50,4 +51,41 @@ func TestText(t *testing.T) {
 			got := u.String()
 			y.AssertEqual(t, got, data.arg)
 		})
+}
+
+func testVersion[U interface {
+	Version() uint8
+	Variant() uint8
+}](
+	t *testing.T,
+	f func() (U, error),
+	version uint8,
+	variant uint8,
+) error {
+	u, err := f()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return err
+	}
+
+	if u.Version() != version {
+		t.Errorf("Fail Version: %v != %v\n", u.Version(), version)
+		return fmt.Errorf("Version Error")
+	}
+
+	if u.Variant() != variant {
+		t.Errorf("Fail Variant: %v != %v\n", u.Variant(), variant)
+		return fmt.Errorf("Variant Error")
+	}
+
+	return nil
+}
+
+func TestVersion(t *testing.T){
+	if testVersion(t, NewUUIDv4, 4, 0b10) != nil {
+		return
+	}
+	if testVersion(t, NewUUIDv7, 7, 0b10) != nil {
+		return
+	}
 }
