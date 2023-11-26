@@ -228,6 +228,47 @@ func BenchmarkNaiveLock(b *testing.B){
 	}
 }
 
+func BenchmarkMutexContextSwitch(b *testing.B){
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	mu.Lock()
+
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(){
+			mu.Lock()
+			mu.Unlock()
+			wg.Done()
+		}()
+	}
+
+	b.ResetTimer()
+	mu.Unlock()
+	wg.Wait()
+}
+
+func BenchmarkCtxLockContextSwitch(b *testing.B){
+	L := NewLock()
+	ctx := context.Background()
+	var wg sync.WaitGroup
+
+	unlock, _ := L.Lock(ctx)
+
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(){
+			unlock, _ := L.Lock(ctx)
+			unlock()
+			wg.Done()
+		}()
+	}
+
+	b.ResetTimer()
+	unlock()
+	wg.Wait()
+}
+
 func BenchmarkRWMutex(b *testing.B){
 	var mu sync.RWMutex
 
