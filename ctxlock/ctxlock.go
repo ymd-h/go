@@ -82,7 +82,7 @@ func NewSharableLock() *SharableLock {
 // readThread takes unlock function for already locked exclusive lock
 // and tracks the number of reader locks.
 // Once all the readers are finished, unlock is called.
-func (L *SharableLock) readThread(unlock func()){
+func (L *SharableLock) readThread(unlock UnlockFunc){
 	defer unlock()
 
 	i := 1
