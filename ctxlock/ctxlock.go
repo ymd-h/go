@@ -15,7 +15,7 @@ type (
 	// SharableLock implements exclusive lock for writer and shared lock for reader.
 	SharableLock struct {
 		lock *Lock
-		want *Lock
+		want *atomic.Int32
 		add chan struct{}
 		done chan struct{}
 	}
@@ -71,9 +71,10 @@ func (L *Lock) unlockFunc() UnlockFunc {
 
 // NewSharableLock creates a new SharableLock and returns the pointer to it.
 func NewSharableLock() *SharableLock {
+	var want atomic.Int32
 	return &SharableLock{
 		lock: NewLock(),
-		want: NewLock(),
+		want: &want,
 		add: make(chan struct{}),
 		done: make(chan struct{}),
 	}
@@ -87,17 +88,25 @@ func (L *SharableLock) readThread(unlock UnlockFunc){
 
 	i := 1
 	for i > 0 {
-		select {
-		case _, ok := <- L.add:
-			if !ok {
-				panic("BUG: add channel should not be closed.")
-			}
-			i += 1
-		case _, ok := <- L.done:
+		if L.want.Load() > 0 {
+			_, ok := <- L.done
 			if !ok {
 				panic("BUG: done channel should not be closed.")
 			}
 			i -= 1
+		} else {
+			select {
+			case _, ok := <- L.add:
+				if !ok {
+					panic("BUG: add channel should not be closed.")
+				}
+				i += 1
+			case _, ok := <- L.done:
+				if !ok {
+					panic("BUG: done channel should not be closed.")
+				}
+				i -= 1
+			}
 		}
 	}
 }
@@ -111,12 +120,11 @@ func (L *SharableLock) doneFunc() UnlockFunc {
 // SharedLock tries to lock for reader and returns unlock function when it succeed.
 // If ctx is canceled, lock is canceled and context.Cause(ctx) error is returned.
 func (L *SharableLock) SharedLock(ctx context.Context) (UnlockFunc, error) {
-	// Check want can lock.
-	wunlock, err := L.want.Lock(ctx)
-	if err != nil {
-		return nil, err
+	select {
+	case <- ctx.Done():
+		return nil, context.Cause(ctx)
+	default:
 	}
-	defer wunlock()
 
 	select {
 	case L.add <- struct{}{}:
@@ -132,21 +140,22 @@ func (L *SharableLock) SharedLock(ctx context.Context) (UnlockFunc, error) {
 // ExclusiveLock tries to lock for writer and returns unlock function when it succeed.
 // If ctx is canceled, lock is canceled and context.Cause(ctx) error is returned.
 func (L *SharableLock) ExclusiveLock(ctx context.Context) (UnlockFunc, error) {
-	// Locking `want` blocks new SharedLock()
-	wunlock, err := L.want.Lock(ctx)
-	if err != nil {
-		return nil, err
+	select {
+	case <- ctx.Done():
+		return nil, context.Cause(ctx)
+	default:
 	}
+
+	L.want.Add(1)
+	defer L.want.Add(-1)
 
 	unlock, err :=  L.lock.Lock(ctx)
 	if err != nil {
-		wunlock()
 		return nil, err
 	}
 
 	return func(){
 		unlock()
-		wunlock()
 	}, nil
 }
 
