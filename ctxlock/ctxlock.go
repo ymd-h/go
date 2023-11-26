@@ -149,14 +149,7 @@ func (L *SharableLock) ExclusiveLock(ctx context.Context) (UnlockFunc, error) {
 	L.want.Add(1)
 	defer L.want.Add(-1)
 
-	unlock, err :=  L.lock.Lock(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(){
-		unlock()
-	}, nil
+	return L.lock.Lock(ctx)
 }
 
 // UnlockOnCancel schedules to call unlock when ctx cancels.
