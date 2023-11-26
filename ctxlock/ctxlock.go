@@ -3,7 +3,7 @@ package ctxlock
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 )
 
 type (
@@ -22,6 +22,20 @@ type (
 
 	UnlockFunc func()
 )
+
+// onceFunc returns wrapped function which can execute only once.
+// This is simpler reimplementation of sync.Once.Do,
+// because we don't need to wait unlock function.
+func onceFunc(f func()) func() {
+	var done atomic.Bool
+
+	return func(){
+		if done.CompareAndSwap(false, true) {
+			f()
+		}
+	}
+}
+
 
 // NewLock creates a new Lock and returns the pointer to it.
 func NewLock() *Lock {
@@ -50,10 +64,9 @@ func (L *Lock) Lock(ctx context.Context) (UnlockFunc, error) {
 
 
 // unlockFunc returns unlock function.
-// The returned function is wrapped by sync.OnceFunc,
-// so that it is safe to call it multiple time.
+// It is safe to call the returned function multiple time.
 func (L *Lock) unlockFunc() UnlockFunc {
-	return sync.OnceFunc(func(){ <-L.write })
+	return onceFunc(func(){ <-L.write })
 }
 
 // NewSharableLock creates a new SharableLock and returns the pointer to it.
@@ -90,10 +103,9 @@ func (L *SharableLock) readThread(unlock func()){
 }
 
 // doneFunc returns done function for reader.
-// The returned function is wrapped by sync.OnceFunc,
-// so that it is safe to call it multiple time.
+// It is safe to call the returned function multiple time.
 func (L *SharableLock) doneFunc() UnlockFunc {
-	return sync.OnceFunc(func(){ L.done <- struct{}{} })
+	return onceFunc(func(){ L.done <- struct{}{} })
 }
 
 // SharedLock tries to lock for reader and returns unlock function when it succeed.
