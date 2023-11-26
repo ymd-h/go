@@ -164,6 +164,37 @@ func TestUnlock(t *testing.T){
 	unlock()
 }
 
+type (
+	NaiveLock struct {
+		mu sync.Mutex
+	}
+)
+
+func (n *NaiveLock) Lock(ctx context.Context) (UnlockFunc, error) {
+	select {
+	case <- ctx.Done():
+		return nil, context.Cause(ctx)
+	default:
+	}
+
+	ch := make(chan struct{})
+	go func(){
+		n.mu.Lock()
+		close(ch)
+	}()
+
+	select {
+	case <- ch:
+		return sync.OnceFunc(func(){ n.mu.Unlock() }), nil
+	case <- ctx.Done():
+		go func(){
+			<- ch
+			n.mu.Unlock()
+		}()
+		return nil, context.Cause(ctx)
+	}
+}
+
 
 func BenchmarkMutex(b *testing.B){
 	var mu sync.Mutex
@@ -186,6 +217,16 @@ func BenchmarkCtxLock(b *testing.B){
 	}
 }
 
+func BenchmarkNaiveLock(b *testing.B){
+	L := &NaiveLock{}
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		unlock, _ := L.Lock(ctx)
+		unlock()
+	}
+}
 
 func BenchmarkRWMutex(b *testing.B){
 	var mu sync.RWMutex
