@@ -128,6 +128,23 @@ func TestSharableLock(t *testing.T){
 
 	unlock1()
 	unlock2()
+
+
+	// Lock with already canceled ctx
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, errCE := L.ExclusiveLock(ctx)
+	if errCE == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
+
+	_, errCS := L.SharedLock(ctx)
+	if errCS == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
 }
 
 
