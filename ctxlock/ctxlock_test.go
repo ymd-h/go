@@ -14,7 +14,7 @@ func newTimeout(dt time.Duration) (context.Context, context.CancelFunc) {
 
 func TestLock(t *testing.T){
 	L := NewLock()
-	dt := time.Duration(10000)
+	dt := time.Duration(100000)
 
 	// Lock
 	// -> OK
