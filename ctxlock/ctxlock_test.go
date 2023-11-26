@@ -290,6 +290,45 @@ func BenchmarkCtxSharableLockExclusive(b *testing.B){
 	}
 }
 
+func BenchmarkRWMutexExclusiveContextSwitch(b *testing.B){
+	var mu sync.RWMutex
+	var wg sync.WaitGroup
+
+	mu.Lock()
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(){
+			mu.Lock()
+			mu.Unlock()
+			wg.Done()
+		}()
+	}
+
+	b.ResetTimer()
+	mu.Unlock()
+	wg.Wait()
+}
+
+func BenchmarkCtxSharableLockExclusiveContextSwitch(b *testing.B){
+	L := NewSharableLock()
+	ctx := context.Background()
+	var wg sync.WaitGroup
+
+	unlock, _ := L.ExclusiveLock(ctx)
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(){
+			unlock, _ := L.ExclusiveLock(ctx)
+			unlock()
+			wg.Done()
+		}()
+	}
+
+	b.ResetTimer()
+	unlock()
+	wg.Wait()
+}
+
 func BenchmarkRWMutexShared(b *testing.B){
 	var mu sync.RWMutex
 
