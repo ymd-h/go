@@ -2,6 +2,7 @@ package ctxlock
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 )
@@ -161,4 +162,46 @@ func TestUnlock(t *testing.T){
 		return
 	}
 	unlock()
+}
+
+
+func BenchmarkMutex(b *testing.B){
+	var mu sync.Mutex
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		mu.Lock()
+		mu.Unlock()
+	}
+}
+
+func BenchmarkCtxLock(b *testing.B){
+	L := NewLock()
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		unlock, _ := L.Lock(ctx)
+		unlock()
+	}
+}
+
+
+func BenchmarkRWMutex(b *testing.B){
+	var mu sync.RWMutex
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		mu.RLock()
+	}
+}
+
+func BenchmarkCtxSharableLock(b *testing.B){
+	L := NewSharableLock()
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		L.SharedLock(ctx)
+	}
 }
