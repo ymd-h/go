@@ -15,7 +15,7 @@ The main purposes are followings;
 | Name                         | Version |
 |------------------------------|---------|
 | github.com/ymd-h/go/async    | v1.0.0  |
-| github.com/ymd-h/go/ctxlock  | v1.0.0  |
+| github.com/ymd-h/go/ctxlock  | v1.0.1  |
 | github.com/ymd-h/go/encoding | v1.0.0  |
 | github.com/ymd-h/go/maps     | v1.0.0  |
 | github.com/ymd-h/go/qchan    | v1.0.0  |
