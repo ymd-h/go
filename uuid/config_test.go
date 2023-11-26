@@ -120,3 +120,32 @@ func TestUUIDv7(t *testing.T) {
 		return
 	}
 }
+
+
+func TestNewUUIDv4(t *testing.T){
+	u, err := NewUUIDv4()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	err = u.validate()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+}
+
+func TestNewUUIDv7(t *testing.T){
+	u, err := NewUUIDv7()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	err = u.validate()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+}
