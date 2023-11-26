@@ -9,7 +9,7 @@ import (
 type (
 	// Lock implements ordinary exclusive lock.
 	Lock struct {
-		write chan struct{}
+		lck chan struct{}
 	}
 
 	// SharableLock implements exclusive lock for writer and shared lock for reader.
@@ -40,7 +40,7 @@ func onceFunc(f func()) func() {
 // NewLock creates a new Lock and returns the pointer to it.
 func NewLock() *Lock {
 	return &Lock{
-		write: make(chan struct{}, 1),
+		lck: make(chan struct{}, 1),
 	}
 }
 
@@ -55,7 +55,7 @@ func (L *Lock) Lock(ctx context.Context) (UnlockFunc, error) {
 	}
 
 	select {
-	case L.write <- struct{}{}:
+	case L.lck <- struct{}{}:
 		return L.unlockFunc(), nil
 	case <- ctx.Done():
 		return nil, context.Cause(ctx)
@@ -66,7 +66,7 @@ func (L *Lock) Lock(ctx context.Context) (UnlockFunc, error) {
 // unlockFunc returns unlock function.
 // It is safe to call the returned function multiple time.
 func (L *Lock) unlockFunc() UnlockFunc {
-	return onceFunc(func(){ <-L.write })
+	return onceFunc(func(){ <-L.lck })
 }
 
 // NewSharableLock creates a new SharableLock and returns the pointer to it.
@@ -128,7 +128,7 @@ func (L *SharableLock) SharedLock(ctx context.Context) (UnlockFunc, error) {
 
 	select {
 	case L.add <- struct{}{}:
-	case L.lock.write <- struct{}{}:
+	case L.lock.lck <- struct{}{}:
 		go L.readThread(L.lock.unlockFunc())
 	case <- ctx.Done():
 		return nil, context.Cause(ctx)
