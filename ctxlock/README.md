@@ -3,7 +3,7 @@
 `ctxlock` provides context-aware locks (`Lock` / `SharableLock`).
 User can safely cancel a wating to acquire the lock through `context.Context`.
 
-Unlike standard `sync.Lock`, there is no unlock method.
+Unlike standard `sync.Mutex`, there is no unlock method.
 An unlock function (`ctxlock.UnlockFunc`) is returned from its lock methods instead.
 
 The unlock function is wrapped by `sync.OnceFunc`,
