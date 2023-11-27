@@ -89,3 +89,64 @@ func TestVersion(t *testing.T){
 		return
 	}
 }
+
+
+func TestBinary(t *testing.T){
+	tests := []struct{
+		name string
+		data []byte
+		ok bool
+	}{
+		{
+			name: "zero",
+			data: []byte{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			ok: true,
+		},
+		{
+			name: "short",
+			data: []byte{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			ok: false,
+		},
+		{
+			name: "long",
+			data: []byte{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			ok: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func (t *testing.T){
+			var u UUID
+
+			err := u.UnmarshalBinary(test.data)
+			if err != nil {
+				if test.ok {
+					t.Errorf("Fail: %v\n", err)
+				}
+				return
+			} else {
+				if !test.ok {
+					t.Errorf("Must Fail\n")
+					return
+				}
+			}
+
+			b, err := u.MarshalBinary()
+			if err != nil {
+				t.Errorf("Fail: %v\n", err)
+				return
+			}
+
+			if len(b) != len(test.data) {
+				t.Errorf("Fail\n")
+				return
+			}
+			for i, d := range test.data {
+				if b[i] != d {
+					t.Errorf("Fail\n")
+					return
+				}
+			}
+		})
+	}
+}
