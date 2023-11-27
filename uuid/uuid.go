@@ -1,6 +1,7 @@
 package uuid
 
 import (
+	"encoding/binary"
 	"fmt"
 )
 
@@ -188,6 +189,22 @@ func (u *UUIDv7) validate() error {
 	}
 
 	return nil
+}
+
+func (u *UUIDv7) timestamp() uint64 {
+	return binary.BigEndian.Uint64(u.b[0:]) >> 16
+}
+
+func (u *UUIDv7) TimestampBefore(other *UUIDv7) bool {
+	return u.timestamp() < other.timestamp()
+}
+
+func (u *UUIDv7) TimestampAfter(other *UUIDv7) bool {
+	return u.timestamp() > other.timestamp()
+}
+
+func (u *UUIDv7) TimestampEqual(other *UUIDv7) bool {
+	return u.timestamp() == other.timestamp()
 }
 
 func FromString(s string) (*UUID, error) {
