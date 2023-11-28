@@ -150,3 +150,39 @@ func TestBinary(t *testing.T){
 		})
 	}
 }
+
+
+func TestUUIDv7Timestamp(t *testing.T){
+	u7, err := NewUUIDv7()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	var o7 UUIDv7
+	err = o7.UnmarshalText([]byte("00000000-0000-7000-8000-000000000000"))
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	if u7.TimestampBefore(&o7) {
+		t.Errorf("Fail\n")
+		return
+	}
+
+	if o7.TimestampAfter(u7) {
+		t.Errorf("Fail\n")
+		return
+	}
+
+	if u7.TimestampEqual(&o7) {
+		t.Errorf("Fail\n")
+		return
+	}
+
+	if !u7.TimestampEqual(u7) {
+		t.Errorf("Fail\n")
+		return
+	}
+}
