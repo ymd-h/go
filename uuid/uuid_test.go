@@ -152,6 +152,50 @@ func TestBinary(t *testing.T){
 }
 
 
+func TestTry(t *testing.T){
+	var u UUID
+
+	b4 := []byte("00000000-0000-4000-8000-000000000000")
+	err := u.UnmarshalText(b4)
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	_, err = u.TryUUIDv4()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	_, err7 := u.TryUUIDv7()
+	if err7 == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
+
+
+	b7 := []byte("00000000-0000-7000-8000-000000000000")
+	err = u.UnmarshalText(b7)
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	_, err4 := u.TryUUIDv4()
+	if err4 == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
+
+	_, err = u.TryUUIDv7()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+}
+
+
 func TestUUIDv7Timestamp(t *testing.T){
 	u7, err := NewUUIDv7()
 	if err != nil {
