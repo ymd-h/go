@@ -136,6 +136,11 @@ func TestUUIDv7(t *testing.T) {
 		t.Errorf("Fail: %v\n", err)
 		return
 	}
+
+	if u.timestamp() != uint64(T.UnixMilli()) {
+		t.Errorf("Fail: %x != %x\n", u.timestamp(), T.UnixMilli())
+		return
+	}
 }
 
 
