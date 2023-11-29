@@ -38,6 +38,7 @@ type (
 var (
 	ErrTimestampAlreadySet = errors.New("Timestamp has already been set.")
 	ErrRandomAlreadySet = errors.New("Random has already been set.")
+	ErrTimestampOutOfRange = errors.New("Timestamp is out of range.")
 )
 
 
@@ -116,6 +117,10 @@ func (c *Config) UUIDv7() (*UUIDv7, error) {
 	var u UUIDv7
 
 	unix_ms := c.t.UnixMilli()
+	if (unix_ms > 0xFFFFFFFFFFFF) || (unix_ms < 0) {
+		return nil, fmt.Errorf("%w: %v", ErrTimestampOutOfRange, unix_ms)
+	}
+
 	binary.BigEndian.PutUint16(u.b[ :2], uint16(unix_ms >> 32))
 	binary.BigEndian.PutUint32(u.b[2:6], uint32(unix_ms & 0xFFFFFFFF))
 
