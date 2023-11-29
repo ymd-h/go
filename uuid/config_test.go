@@ -94,13 +94,30 @@ func TestUUIDv4(t *testing.T) {
 }
 
 func TestUUIDv7(t *testing.T) {
-	T := TimestampFrom(func() int64 { return 0x0123456789ABCDEF })
+	TF := TimestampFrom(func() int64 { return 0x0123456789ABCDEF })
+	T := TimestampFrom(func() int64 { return 0x123456789ABC })
 	R := RandomFrom(func(b []byte) error {
 		for i, _ := range b {
 			b[i] = byte(i)
 		}
 		return nil
 	})
+
+	c, errF := NewConfig(TF, R)
+	if errF != nil {
+		t.Errorf("Fail: %v\n", errF)
+		return
+	}
+
+	_, errF = c.UUIDv7()
+	if errF == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
+	if !errors.Is(errF, ErrTimestampOutOfRange) {
+		t.Errorf("Fail: %v\n", errF)
+		return
+	}
 
 	c, err := NewConfig(T, R)
 	if err != nil {
