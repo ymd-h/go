@@ -57,7 +57,10 @@ func (t *timestampFunc) UnixMilli() int64 {
 
 func (_ defaultRandom) FillRandom(b []byte) error {
 	_, err := rand.Read(b)
-	return err
+	if err != nil {
+		return fmt.Errorf("Fail default FillRandom(): %v", err)
+	}
+	return nil
 }
 
 func RandomFrom(f func([]byte) error) *randomFunc {
