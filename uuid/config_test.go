@@ -103,6 +103,15 @@ func TestUUIDv7(t *testing.T) {
 		return nil
 	})
 
+	_, errO := NewConfig(struct{}{})
+	if errO == nil {
+		t.Errorf("Must Fail\n")
+		return
+	}
+	if !errors.Is(errO, ErrUnknownOption) {
+		t.Errorf("Fail: %v\n", errO)
+	}
+
 	c, errF := NewConfig(TF, R)
 	if errF != nil {
 		t.Errorf("Fail: %v\n", errF)

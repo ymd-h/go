@@ -39,6 +39,7 @@ var (
 	ErrTimestampAlreadySet = errors.New("Timestamp has already been set.")
 	ErrRandomAlreadySet = errors.New("Random has already been set.")
 	ErrTimestampOutOfRange = errors.New("Timestamp is out of range.")
+	ErrUnknownOption = errors.New("Unknown config option")
 )
 
 
@@ -86,7 +87,7 @@ func NewConfig(options ...any) (*Config, error) {
 			}
 			c.r = r
 		} else {
-			return nil, fmt.Errorf("Unknown Option: %T", o)
+			return nil, fmt.Errorf("%w: %T", ErrUnknownOption, o)
 		}
 	}
 
