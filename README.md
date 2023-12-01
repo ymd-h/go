@@ -18,9 +18,9 @@ The main purposes are followings;
 | github.com/ymd-h/go/ctxlock  | v1.0.1  |
 | github.com/ymd-h/go/encoding | v1.0.0  |
 | github.com/ymd-h/go/maps     | v1.0.0  |
+| github.com/ymd-h/go/prng     | N/A     |
 | github.com/ymd-h/go/qchan    | v1.0.0  |
 | github.com/ymd-h/go/slices   | N/A     |
 | github.com/ymd-h/go/sets     | v1.0.0  |
-| github.com/ymd-h/go/worktidy | N/A     |
 | github.com/ymd-h/go/testing  | v0.0.1  |
-| github.com/ymd-h/go/prng     | N/A     |
+| github.com/ymd-h/go/worktidy | N/A     |
