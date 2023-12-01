@@ -55,7 +55,7 @@ func TestText(t *testing.T) {
 
 func testVersion[U interface {
 	Version() uint8
-	Variant() uint8
+	variant() uint8
 }](
 	t *testing.T,
 	f func() (U, error),
@@ -73,8 +73,8 @@ func testVersion[U interface {
 		return fmt.Errorf("Version Error")
 	}
 
-	if u.Variant() != variant {
-		t.Errorf("Fail Variant: %v != %v\n", u.Variant(), variant)
+	if u.variant() != variant {
+		t.Errorf("Fail Variant: %v != %v\n", u.variant(), variant)
 		return fmt.Errorf("Variant Error")
 	}
 

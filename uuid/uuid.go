@@ -56,7 +56,7 @@ func (u *baseUUID) Version() uint8 {
 	return uint8(u.b[6] >> 4)
 }
 
-func (u *baseUUID) Variant() uint8 {
+func (u *baseUUID) variant() uint8 {
 	return uint8(u.b[8] >> 6)
 }
 
@@ -161,7 +161,7 @@ func (u *UUIDv4) validate() error {
 		return fmt.Errorf("Version is not 4: %d", version)
 	}
 
-	variant := u.Variant()
+	variant := u.variant()
 	if variant != 0b10 {
 		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
@@ -183,7 +183,7 @@ func (u *UUIDv7) validate() error {
 		return fmt.Errorf("Version is not 7: %d", version)
 	}
 
-	variant := u.Variant()
+	variant := u.variant()
 	if variant != 0b10 {
 		return fmt.Errorf("Variant is not 0x10: %d", variant)
 	}
