@@ -88,6 +88,21 @@ func TestVersion(t *testing.T){
 	if testVersion(t, NewUUIDv7, 7, 0b10) != nil {
 		return
 	}
+
+	u4, err := NewUUIDv4()
+	if err != nil {
+		t.Errorf("Fail: %v\n", err)
+		return
+	}
+
+	s := u4.String()
+
+	u4.setVersion(7)
+	u4.setVersion(4)
+	if s != u4.String() {
+		t.Errorf("Fail: %s != %s\n", s, u4.String())
+		return
+	}
 }
 
 
