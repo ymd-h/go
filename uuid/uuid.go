@@ -23,6 +23,10 @@ type(
 	}
 )
 
+const (
+	uuidVariant = 0x8
+	uuidVariantMask = 0x3F
+)
 
 func (u *baseUUID) String() string {
 	return fmt.Sprintf(
@@ -56,16 +60,16 @@ func (u *baseUUID) Version() uint8 {
 	return uint8(u.b[6] >> 4)
 }
 
-func (u *baseUUID) variant() uint8 {
-	return uint8(u.b[8] >> 6)
+func (u *baseUUID) Variant() uint8 {
+	return uint8(u.b[8] >> 4)
 }
 
 func (u *baseUUID) setVersion(v uint8) {
 	u.b[6] = (u.b[6] & 0x0F) | (byte(v) << 4)
 }
 
-func (u *baseUUID) setVariant(v uint8) {
-	u.b[8] = (u.b[8] & 0b00111111) | (byte(v) << 6)
+func (u *baseUUID) setVariant(v uint8, mask uint8) {
+	u.b[8] = (u.b[8] & mask) | (byte(v) << 4)
 }
 
 func (u *baseUUID) unmarshalText(data []byte) error {
@@ -161,9 +165,9 @@ func (u *UUIDv4) validate() error {
 		return fmt.Errorf("Version is not 4: %d", version)
 	}
 
-	variant := u.variant()
-	if variant != 0b10 {
-		return fmt.Errorf("Variant is not 0x10: %d", variant)
+	variant := u.Variant()
+	if (variant >> 2) != 0b10 {
+		return fmt.Errorf("Variant must be 8, 9, A, or B: %d", variant)
 	}
 
 	return nil
@@ -183,9 +187,9 @@ func (u *UUIDv7) validate() error {
 		return fmt.Errorf("Version is not 7: %d", version)
 	}
 
-	variant := u.variant()
-	if variant != 0b10 {
-		return fmt.Errorf("Variant is not 0x10: %d", variant)
+	variant := u.Variant()
+	if (variant >> 2) != 0b10 {
+		return fmt.Errorf("Variant must be 8, 9, A, or B: %d", variant)
 	}
 
 	return nil

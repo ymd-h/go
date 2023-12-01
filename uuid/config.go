@@ -112,7 +112,7 @@ func (c *Config) UUIDv4() (*UUIDv4, error) {
 	}
 
 	u.setVersion(4)
-	u.setVariant(0b10)
+	u.setVariant(uuidVariant, uuidVariantMask)
 
 	return &u, nil
 }
@@ -134,7 +134,7 @@ func (c *Config) UUIDv7() (*UUIDv7, error) {
 	}
 
 	u.setVersion(7)
-	u.setVariant(0b10)
+	u.setVariant(uuidVariant, uuidVariantMask)
 
 	return &u, nil
 }
