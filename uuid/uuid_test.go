@@ -103,6 +103,12 @@ func TestVersion(t *testing.T){
 		t.Errorf("Fail: %s != %s\n", s, u4.String())
 		return
 	}
+
+	u4.setVariant(uuidVariant, uuidVariantMask)
+	if s != u4.String() {
+		t.Errorf("Fail: %s != %s\n", s, u4.String())
+		return
+	}
 }
 
 
