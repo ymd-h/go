@@ -68,8 +68,8 @@ func testVersion[U interface {
 		return err
 	}
 
-	if u.Version() != version {
-		t.Errorf("Fail Version: %v != %v\n", u.Version(), version)
+	if v := u.Version(); v != version {
+		t.Errorf("Fail Version: %v != %v\n", v, version)
 		return fmt.Errorf("Version Error")
 	}
 
