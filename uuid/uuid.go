@@ -1,3 +1,4 @@
+// Package uuid provides UUIDs
 package uuid
 
 import (
@@ -10,14 +11,17 @@ type(
 		b [16]byte
 	}
 
+	// non-versioned UUID
 	UUID struct {
 		baseUUID
 	}
 
+	// UUIDv4 is UUID Version 4.
 	UUIDv4 struct {
 		baseUUID
 	}
 
+	// UUIDv7 is UUID Version 7.
 	UUIDv7 struct {
 		baseUUID
 	}
@@ -28,6 +32,7 @@ const (
 	uuidVariantMask = 0x3F
 )
 
+// String returns "hex-and-dash" string format of UUID.
 func (u *baseUUID) String() string {
 	return fmt.Sprintf(
 		"%02x%02x%02x%02x-" +
@@ -43,23 +48,28 @@ func (u *baseUUID) String() string {
 	)
 }
 
+// Bytes returns binary format of UUID.
 func (u *baseUUID) Bytes() []byte {
 	b := make([]byte, 0, len(u.b))
 	return append(b, u.b[:]...)
 }
 
+// MarshalText returns text format of UUID.
 func (u *baseUUID) MarshalText() ([]byte, error) {
 	return []byte(u.String()), nil
 }
 
+// MarshalBinary returns binary format of UUID.
 func (u *baseUUID) MarshalBinary() ([]byte, error) {
 	return u.Bytes(), nil
 }
 
+// Version returns UUID version field (aka. the most significant 4 bits of octet 6).
 func (u *baseUUID) Version() uint8 {
 	return uint8(u.b[6] >> 4)
 }
 
+// Variant return UUID variant field (aka. the most significant 4 bits of octet 8).
 func (u *baseUUID) Variant() uint8 {
 	return uint8(u.b[8] >> 4)
 }
@@ -121,14 +131,17 @@ func (u *baseUUID) unmarshalBinary(data []byte) error {
 	return nil
 }
 
+// UnmarshalText decodes text data and reports error.
 func (u *UUID) UnmarshalText(text []byte) error {
 	return u.unmarshalText(text)
 }
 
+// UnmarshalBinary decodes binary data and reports error.
 func (u *UUID) UnmarshalBinary(data []byte) error {
 	return u.unmarshalBinary(data)
 }
 
+// TryUUIDv4 try to convert to UUIVv4.
 func (u *UUID) TryUUIDv4() (*UUIDv4, error) {
 	u4 := &UUIDv4{ u.baseUUID }
 
@@ -140,6 +153,7 @@ func (u *UUID) TryUUIDv4() (*UUIDv4, error) {
 	return u4, nil
 }
 
+// TryUUIDv7 try to convert to UUIDv7.
 func (u *UUID) TryUUIDv7() (*UUIDv7, error) {
 	u7 := &UUIDv7{ u.baseUUID }
 
@@ -151,10 +165,12 @@ func (u *UUID) TryUUIDv7() (*UUIDv7, error) {
 	return u7, nil
 }
 
+// UnmarshalText decodes text data and reports error.
 func (u *UUIDv4) UnmarshalText(text []byte) error {
 	return unmarshal(&tUUID{u}, text)
 }
 
+// UnmarshalBinary decodes binary data and reports error.
 func (u *UUIDv4) UnmarshalBinary(data []byte) error {
 	return unmarshal(&bUUID{u}, data)
 }
@@ -173,10 +189,12 @@ func (u *UUIDv4) validate() error {
 	return nil
 }
 
+// UnmarshalText decodes text data and reports error.
 func (u *UUIDv7) UnmarshalText(text []byte) error {
 	return unmarshal(&tUUID{u}, text)
 }
 
+// UnmarshalBinary decodes binary data and reports error.
 func (u *UUIDv7) UnmarshalBinary(data []byte) error {
 	return unmarshal(&bUUID{u}, data)
 }
@@ -199,18 +217,22 @@ func (u *UUIDv7) timestamp() uint64 {
 	return binary.BigEndian.Uint64(u.b[0:]) >> 16
 }
 
+// TimestampBefore reports whether it's timestamp is before than other's.
 func (u *UUIDv7) TimestampBefore(other *UUIDv7) bool {
 	return u.timestamp() < other.timestamp()
 }
 
+// TimestampAfter reports whether it's timestamp is after than other's.
 func (u *UUIDv7) TimestampAfter(other *UUIDv7) bool {
 	return u.timestamp() > other.timestamp()
 }
 
+// TimestampEqual reports whether it's timestamp is equal to other's.
 func (u *UUIDv7) TimestampEqual(other *UUIDv7) bool {
 	return u.timestamp() == other.timestamp()
 }
 
+// FromString creates non-versioned UUID.
 func FromString(s string) (*UUID, error) {
 	var u UUID
 

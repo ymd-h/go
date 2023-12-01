@@ -9,6 +9,7 @@ import (
 )
 
 type (
+	// ITimestamp is interface for config option of timestamp
 	ITimestamp interface {
 		UnixMilli() int64
 	}
@@ -19,6 +20,7 @@ type (
 		f func() int64
 	}
 
+	// IRandom is interface for config option of random.
 	IRandom interface {
 		FillRandom([]byte) error
 	}
@@ -47,6 +49,7 @@ func (_ defaultTimestamp) UnixMilli() int64 {
 	return time.Now().UnixMilli()
 }
 
+// TimestampFrom creates new option implementing ITimestamp.
 func TimestampFrom(f func() int64) *timestampFunc {
 	return &timestampFunc{ f: f }
 }
@@ -63,6 +66,7 @@ func (_ defaultRandom) FillRandom(b []byte) error {
 	return nil
 }
 
+// RandomFrom creates new option implementing IRandom.
 func RandomFrom(f func([]byte) error) *randomFunc {
 	return &randomFunc{ f: f }
 }
@@ -71,6 +75,10 @@ func (r *randomFunc) FillRandom(b []byte) error {
 	return r.f(b)
 }
 
+// NewConfig creates new Config with options.
+// If multiple same type options are passed,
+// ErrTimestampAlreadySet / ErrRandomAlreadySet are returned.
+// If unknown options are passed, ErrUnknownOption is returned.
 func NewConfig(options ...any) (*Config, error) {
 	c := Config{
 		t: nil,
@@ -104,6 +112,7 @@ func NewConfig(options ...any) (*Config, error) {
 	return &c, nil
 }
 
+// UUIDv4 creates new UUIDv4.
 func (c *Config) UUIDv4() (*UUIDv4, error) {
 	var u UUIDv4
 	err := c.r.FillRandom(u.b[:])
@@ -117,6 +126,7 @@ func (c *Config) UUIDv4() (*UUIDv4, error) {
 	return &u, nil
 }
 
+// UUIDv7 creates new UUIDv7.
 func (c *Config) UUIDv7() (*UUIDv7, error) {
 	var u UUIDv7
 
@@ -139,11 +149,13 @@ func (c *Config) UUIDv7() (*UUIDv7, error) {
 	return &u, nil
 }
 
+// NewUUIDv4 creates new UUIDv4 with default Config.
 func NewUUIDv4() (*UUIDv4, error) {
 	cfg, _ := NewConfig()
 	return cfg.UUIDv4()
 }
 
+// NewUUIDv7 creates new UUIDv7 with default Config.
 func NewUUIDv7() (*UUIDv7, error) {
 	cfg, _ := NewConfig()
 	return cfg.UUIDv7()
