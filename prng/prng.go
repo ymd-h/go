@@ -5,34 +5,28 @@ import (
 )
 
 type (
-	IPRNG32 interface {
-		Next() uint32
-	}
+	iRandom interface { uint32  | uint64  }
+	fRandom interface { float32 | float64 }
 
-	IPRNG64 interface {
-		Next() uint64
+	IPRNG[I iRandom] interface {
+		Next() I
 	}
 
 	prng32on64 struct {
-		g IPRNG64
+		g IPRNG[uint64]
 	}
 
-	IRandom32 interface {
-		Uint32() uint32
-		Float32() float32
-	}
-
-	IRandom64 interface {
-		Uint64() uint64
-		Float64() float64
+	IRandom[I iRandom, F fRandom] interface {
+		Uint() I
+		Float() F
 	}
 
 	random32 struct {
-		g IPRNG32
+		g IPRNG[uint32]
 	}
 
 	random64 struct {
-		g IPRNG64
+		g IPRNG[uint64]
 	}
 
 	ISplittable[T any] interface {
@@ -41,38 +35,41 @@ type (
 	}
 )
 
-func Low32(g IPRNG64) *prng32on64 {
-	return &prng32on64{g: g}
-}
-
 func (p *prng32on64) Next() uint32 {
-	return uint32(p.Next() >> 32)
+	return uint32(p.g.Next() >> 32)
 }
 
+func NewRandom32[I iRandom](g IPRNG[I]) IRandom[uint32, float32] {
+	if g32, ok := g.(IPRNG[uint32]); ok {
+		return &random32{g: &pring32on64{g: g32}}
+	}
 
-func NewRandom32(g IPRNG32) *random32 {
-	return &random32{g: g}
+	if g64, ok := g.(IPRNG[uint64]); ok {
+		return &random32{g: g64}
+	}
+
+	panic("BUG")
 }
 
-func NewRandom64(g IPRNG64) *random64 {
+func NewRandom64(g IPRNG[uint64]) IRandom[uint64, float64] {
 	return &random64{g: g}
 }
 
-func (p *random32) Uint32() uint32 {
+func (p *random32) Uint() uint32 {
 	return p.g.Next()
 }
 
-func (p *random32) Float32() float32 {
+func (p *random32) Float() float32 {
 	x := p.g.Next()
 	f := math.Float32frombits((uint32(0x7F) << 23) | (x >> 9))
 	return f - 1.0
 }
 
-func (p *random64) Uint64() uint64 {
+func (p *random64) Uint() uint64 {
 	return p.g.Next()
 }
 
-func (p *random64) Float64() float64 {
+func (p *random64) Float() float64 {
 	x := p.g.Next()
 	f := math.Float64frombits((uint64(0x3FF) << 52) | (x >> 12))
 	return f - 1.0
