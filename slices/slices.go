@@ -80,93 +80,15 @@ type (
 
 
 func NewSlice[E any]() ISlice[E] {
-	var e E
-	switch any(e).(type) {
-	case bool:
-		return NewComparableSlice[bool]().(ISlice[E])
-	case string:
-		return NewComparableSlice[string]().(ISlice[E])
-	case int:
-		return NewComparableSlice[int]().(ISlice[E])
-	case int8:
-		return NewComparableSlice[int8]().(ISlice[E])
-	case int16:
-		return NewComparableSlice[int16]().(ISlice[E])
-	case int32:
-		return NewComparableSlice[int32]().(ISlice[E])
-	case int64:
-		return NewComparableSlice[int64]().(ISlice[E])
-	case uint:
-		return NewComparableSlice[uint]().(ISlice[E])
-	case uint8:
-		return NewComparableSlice[uint8]().(ISlice[E])
-	case uint16:
-		return NewComparableSlice[uint16]().(ISlice[E])
-	case uint32:
-		return NewComparableSlice[uint32]().(ISlice[E])
-	case uint64:
-		return NewComparableSlice[uint64]().(ISlice[E])
-	case uintptr:
-		return NewComparableSlice[uintptr]().(ISlice[E])
-	case float32:
-		return NewComparableSlice[float32]().(ISlice[E])
-	case float64:
-		return NewComparableSlice[float64]().(ISlice[E])
-	case complex64:
-		return NewComparableSlice[complex64]().(ISlice[E])
-	case complex128:
-		return NewComparableSlice[complex128]().(ISlice[E])
-	default:
-		return &Slice[E]{
-			item: make([]E, 0),
-		}
-	}
+	return NewSliceFrom(make([]E, 0))
 }
+
 func NewComparableSlice[E comparable]() IComparableSlice[E] {
-	var e E
-	switch any(e).(type) {
-	case string:
-		return NewOrderedSlice[string]().(IComparableSlice[E])
-	case int:
-		return NewOrderedSlice[int]().(IComparableSlice[E])
-	case int8:
-		return NewOrderedSlice[int8]().(IComparableSlice[E])
-	case int16:
-		return NewOrderedSlice[int16]().(IComparableSlice[E])
-	case int32:
-		return NewOrderedSlice[int32]().(IComparableSlice[E])
-	case int64:
-		return NewOrderedSlice[int64]().(IComparableSlice[E])
-	case uint:
-		return NewOrderedSlice[uint]().(IComparableSlice[E])
-	case uint8:
-		return NewOrderedSlice[uint8]().(IComparableSlice[E])
-	case uint16:
-		return NewOrderedSlice[uint16]().(IComparableSlice[E])
-	case uint32:
-		return NewOrderedSlice[uint32]().(IComparableSlice[E])
-	case uint64:
-		return NewOrderedSlice[uint64]().(IComparableSlice[E])
-	case float32:
-		return NewOrderedSlice[float32]().(IComparableSlice[E])
-	case float64:
-		return NewOrderedSlice[float64]().(IComparableSlice[E])
-	default:
-		return &ComparableSlice[E]{
-			Slice[E]{
-				item: make([]E, 0),
-			},
-		}
-	}
+	return NewComparableSliceFrom(make([]E, 0))
 }
+
 func NewOrderedSlice[E ordered]() IOrderedSlice[E] {
-	return &OrderedSlice[E]{
-		ComparableSlice[E]{
-			Slice[E]{
-				item: make([]E, 0),
-			},
-		},
-	}
+	return NewOrderedSliceFrom(make([]E, 0))
 }
 
 
