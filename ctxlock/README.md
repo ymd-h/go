@@ -13,7 +13,7 @@ If you want to call it when a context is canceled,
 `UnlockFunc.UnlockOnCancel(ctx)` method can be used.
 
 `ctxlock` is based on goroutine and channel,
-so that it might have performance overhead than that of `sync.Lock`.
+so that it might have performance overhead than that of `sync.Mutex`.
 
 
 ## (Pseudo) Example
@@ -34,5 +34,5 @@ L := ctxlock.NewSharableLock()
 unlock, err := L.SharedLock(context.Background())
 
 // Writer Lock
-unlock, err := L.ExclusiveLock(context.Backgroun())
+unlock, err := L.ExclusiveLock(context.Background())
 ```
